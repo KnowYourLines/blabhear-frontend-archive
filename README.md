@@ -1,4 +1,4 @@
-# recblab-frontend
+# blabhear-frontend
 
 ## Project setup
 ```

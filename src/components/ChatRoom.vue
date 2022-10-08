@@ -11,7 +11,7 @@
       @click="refreshPage"
       class="refresh-button"
     /><br /><br />
-    User left public room. Refresh to rejoin.
+    You left a public room. Refresh to rejoin.
   </div>
   <div v-else-if="userAllowed">
     <div class="column-left">
@@ -59,36 +59,7 @@
           class="edit-button"
         />
       </div>
-      <br /><br />
-      <div v-if="showPlayButton">
-        <img
-          src="@/assets/icons8-play-60.png"
-          @click="playAudio"
-          class="play-button"
-        />
-      </div>
-      <div v-else-if="!isRecording && !isPlaying">
-        <img
-          src="@/assets/icons8-record-64.png"
-          @click="recordAudio"
-          class="record-button"
-        />
-      </div>
-      <div v-else-if="!isPlaying && isRecording">
-        Recording now and sending response in...<br /><br />
-        <img
-          src="@/assets/icons8-checkmark-48.png"
-          @click="saveRecording"
-          class="stop-recording-button"
-        /><img
-          src="@/assets/icons8-cancel-48.png"
-          @click="cancelRecording"
-          class="stop-recording-button"
-        />
-        <CountdownTimer @times-up="timesUp"></CountdownTimer>
-      </div>
-      <div v-else-if="isPlaying && !isRecording">Playing...</div>
-      <br />
+      <br /><br /><br />
     </div>
     <div class="column-right">
       <br />
@@ -142,17 +113,15 @@
       class="home-button"
     />
     <br />
-    User not allowed in private room. Access requested.
+    You are not allowed in private room. Access requested.
   </div>
 </template>
 
 <script>
-import CountdownTimer from "./CountdownTimer.vue";
 import Toggle from "@vueform/toggle";
 export default {
   name: "ChatRoom",
   components: {
-    CountdownTimer,
     Toggle,
   },
   props: {
@@ -177,14 +146,6 @@ export default {
       displayName: null,
       editDisplayName: false,
       editableDisplayName: null,
-      audio: navigator.mediaDevices.getUserMedia({ audio: true }),
-      isRecording: false,
-      isPlaying: false,
-      recordingFile: null,
-      recorder: null,
-      recordingData: [],
-      showPlayButton: false,
-      audioPlayer: new Audio(),
     };
   },
   methods: {
@@ -247,43 +208,6 @@ export default {
         })
       );
     },
-    recordAudio: function () {
-      this.isRecording = true;
-      this.recordingData = [];
-      this.audio.then((stream) => {
-        this.recorder = new MediaRecorder(stream);
-        this.recorder.start(0); //0 for as little audio buffering as possible so recording starts immediately
-        this.recorder.ondataavailable = (event) => {
-          this.recordingData.push(event.data);
-        };
-      });
-    },
-    saveRecording: function () {
-      this.isRecording = false;
-      this.recorder.stop();
-      this.recordingFile = new Blob(this.recordingData, {
-        type: "audio/ogg; codecs=opus",
-      });
-      this.roomWebSocket.send(
-        JSON.stringify({
-          command: "fetch_upload_url",
-        })
-      );
-    },
-    cancelRecording: function () {
-      this.isRecording = false;
-      this.recorder.stop();
-      if (this.audioPlayer.src != "") {
-        this.showPlayButton = true;
-      }
-    },
-    timesUp: function () {
-      this.saveRecording();
-    },
-    playAudio: function () {
-      this.showPlayButton = false;
-      this.audioPlayer.play();
-    },
   },
   created() {
     this.shareable = typeof navigator.share === "function";
@@ -345,31 +269,6 @@ export default {
         fetch(data.upload_url, requestOptions)
           .then((response) => console.log(response))
           .catch((error) => console.log(error));
-      } else if ("download_url" in data) {
-        this.audioPlayer.src = data.download_url;
-        navigator.permissions.query({ name: "microphone" }).then((result) => {
-          if (result.state === "granted") {
-            if (this.isRecording) {
-              this.isRecording = false;
-              this.recorder.stop();
-            }
-            const playPromise = this.audioPlayer.play();
-            if (playPromise !== undefined) {
-              playPromise
-                .then(() => {
-                  // Autoplay started!
-                  this.showPlayButton = false;
-                })
-                .catch(() => {
-                  // Autoplay was prevented.
-                  this.showPlayButton = true;
-                });
-            }
-          } else {
-            this.audio = navigator.mediaDevices.getUserMedia({ audio: true });
-            this.showPlayButton = true;
-          }
-        });
       }
     };
     this.roomWebSocket.onerror = (e) => {
@@ -378,13 +277,6 @@ export default {
     this.roomWebSocket.onclose = () => {
       console.log("Room WebSocket closed");
       location.reload();
-    };
-    this.audioPlayer.onended = () => {
-      this.isPlaying = false;
-      this.recordAudio();
-    };
-    this.audioPlayer.onplay = () => {
-      this.isPlaying = true;
     };
   },
 };
@@ -457,27 +349,5 @@ export default {
 }
 .edit-button:hover {
   background: #e0e0e0;
-}
-.record-button {
-  cursor: pointer;
-  transition: 0.2s;
-}
-.record-button:hover {
-  transform: scale(1.1);
-}
-.stop-recording-button {
-  padding: 6px 10px;
-  cursor: pointer;
-  transition: 0.2s;
-}
-.stop-recording-button:hover {
-  transform: scale(1.1);
-}
-.play-button {
-  cursor: pointer;
-  transition: 0.2s;
-}
-.play-button:hover {
-  transform: scale(1.1);
 }
 </style>
