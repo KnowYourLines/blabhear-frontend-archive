@@ -32,6 +32,7 @@ export default {
           provider: firebase.auth.PhoneAuthProvider.PROVIDER_ID,
           defaultCountry: "GB",
         },
+        firebaseui.auth.AnonymousAuthProvider.PROVIDER_ID
       ],
     };
     firebase.auth().onAuthStateChanged((user) => {
