@@ -1,16 +1,26 @@
 <template>
-  <SignIn v-if="!authToken" @signed-in="signedIn" />
-  <HomePage
-    v-else-if="authToken && !room"
-    :authToken="authToken"
-    :userId="userId"
-    @new-room="newRoom"
-  />
-  <ChatRoom v-else :authToken="authToken" :room="room" />
+  <div v-if="!authToken">
+    <SignIn @signed-in="signedIn" />
+  </div>
+  <div v-else-if="authToken && !room">
+    <div v-if="isAnonymous">
+      <PhoneOnlySignIn @signed-in="signedIn" />
+      <br />
+    </div>
+    <HomePage :authToken="authToken" :userId="userId" @new-room="newRoom" />
+  </div>
+  <div v-else>
+    <div v-if="isAnonymous">
+      <PhoneOnlySignIn @signed-in="signedIn" />
+      <br />
+    </div>
+    <ChatRoom :authToken="authToken" :room="room" />
+  </div>
 </template>
 
 <script>
 import SignIn from "./components/SignIn.vue";
+import PhoneOnlySignIn from "./components/PhoneOnlySignIn.vue";
 import HomePage from "./components/HomePage.vue";
 import ChatRoom from "./components/ChatRoom.vue";
 
@@ -20,18 +30,21 @@ export default {
     SignIn,
     HomePage,
     ChatRoom,
+    PhoneOnlySignIn,
   },
   data() {
     return {
       authToken: null,
       userId: null,
       room: null,
+      isAnonymous: null,
     };
   },
   methods: {
-    signedIn: function (token, userId) {
+    signedIn: function (token, userId, isAnonymous) {
       this.authToken = token;
       this.userId = userId;
+      this.isAnonymous = isAnonymous;
     },
     newRoom: function (room) {
       const url = new URL(window.location.href);
