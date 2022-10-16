@@ -60,7 +60,7 @@
         />
       </div>
       <div id="conversation">
-        <div class="conversation-container" ref="messages">
+        <div class="conversation-container" ref="messages" @scroll="onScroll">
           <div
             v-for="message in messages"
             :key="message"
@@ -176,6 +176,7 @@ export default {
       editableDisplayName: null,
       messages: [],
       messageToSend: "",
+      page: null,
     };
   },
   methods: {
@@ -247,6 +248,16 @@ export default {
       );
       this.messageToSend = "";
     },
+    onScroll({ target: { scrollTop } }) {
+      if (scrollTop == 0) {
+        this.roomWebSocket.send(
+          JSON.stringify({
+            page: this.page + 1,
+            command: "fetch_messages",
+          })
+        );
+      }
+    },
   },
   created() {
     this.shareable = typeof navigator.share === "function";
@@ -309,7 +320,14 @@ export default {
           });
         }
       } else if ("messages" in data) {
-        this.messages = data.messages;
+        this.messages.unshift(...data.messages);
+        this.page = data.page;
+        if (this.page == 1) {
+          this.$nextTick(() => {
+            const messageContainer = this.$refs.messages;
+            messageContainer.scrollTop = messageContainer.scrollHeight;
+          });
+        }
       }
     };
     this.roomWebSocket.onerror = (e) => {
