@@ -60,7 +60,7 @@
         />
       </div>
       <div id="conversation">
-        <div class="conversation-container">
+        <div class="conversation-container" ref="messages">
           <div
             v-for="message in messages"
             :key="message"
@@ -302,6 +302,12 @@ export default {
       } else if ("new_message" in data) {
         const newMessage = data.new_message;
         this.messages.push(newMessage);
+        if (newMessage.creator__username == this.userId) {
+          this.$nextTick(() => {
+            const messageContainer = this.$refs.messages;
+            messageContainer.scrollTop = messageContainer.scrollHeight;
+          });
+        }
       } else if ("messages" in data) {
         this.messages = data.messages;
       }
