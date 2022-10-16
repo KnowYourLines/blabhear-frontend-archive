@@ -59,6 +59,30 @@
           class="edit-button"
         />
       </div>
+      <div id="conversation">
+        <div class="conversation-container">
+          <div
+            v-for="message in messages"
+            :key="message"
+            class="bubble-container"
+            :class="{ myMessage: message.creator_user_id === this.userId }"
+          >
+            <div class="bubble">
+              <div class="name">{{ message.creator }}:</div>
+              <div class="message">{{ message.content }}</div>
+            </div>
+          </div>
+        </div>
+        <div class="input-container">
+          <input
+            class="chat-input"
+            @keyup.enter="sendMessage"
+            v-model="messageToSend"
+            placeholder="Enter your message"
+          />
+          <button class="chat-send" @click="sendMessage">Send</button>
+        </div>
+      </div>
       <br /><br /><br />
     </div>
     <div class="column-right">
@@ -133,6 +157,10 @@ export default {
       type: String,
       required: true,
     },
+    userId: {
+      type: String,
+      required: true,
+    },
   },
   data() {
     return {
@@ -146,6 +174,8 @@ export default {
       displayName: null,
       editDisplayName: false,
       editableDisplayName: null,
+      messages: [],
+      messageToSend: "",
     };
   },
   methods: {
@@ -208,6 +238,15 @@ export default {
         })
       );
     },
+    sendMessage: function () {
+      this.roomWebSocket.send(
+        JSON.stringify({
+          message: this.messageToSend,
+          command: "send_message",
+        })
+      );
+      this.messageToSend = "";
+    },
   },
   created() {
     this.shareable = typeof navigator.share === "function";
@@ -260,15 +299,10 @@ export default {
       } else if ("display_name" in data) {
         this.displayName = data.display_name;
         this.editableDisplayName = data.display_name;
-      } else if ("upload_url" in data) {
-        const requestOptions = {
-          method: "PUT",
-          headers: { "Content-Type": "application/ogg" },
-          body: this.recordingFile,
-        };
-        fetch(data.upload_url, requestOptions)
-          .then((response) => console.log(response))
-          .catch((error) => console.log(error));
+      } else if ("new_message" in data) {
+        console.log(data);
+        this.messages.push(data.new_message);
+        console.log(this.messages);
       }
     };
     this.roomWebSocket.onerror = (e) => {
@@ -349,5 +383,72 @@ export default {
 }
 .edit-button:hover {
   background: #e0e0e0;
+}
+.conversation-container {
+  margin: 0 auto;
+  max-width: 400px;
+  height: 600px;
+  padding: 0 20px;
+  border: 3px solid #f1f1f1;
+  overflow: scroll;
+}
+
+.bubble-container {
+  text-align: left;
+}
+
+.bubble {
+  border: 2px solid #f1f1f1;
+  background-color: #fdfbfa;
+  border-radius: 5px;
+  padding: 10px;
+  margin: 10px 0;
+  width: 230px;
+  float: right;
+}
+
+.myMessage .bubble {
+  background-color: #abf1ea;
+  border: 2px solid #87e0d7;
+  float: left;
+}
+.chat-input {
+  padding: 12px 20px;
+  margin: 8px 0;
+  display: inline-block;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+  margin-right: 5px;
+  width: 300px;
+}
+.chat-send {
+  background-color: #21cfbc;
+  color: white;
+  padding: 14px 20px;
+  margin: 8px 0;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.name {
+  padding-right: 8px;
+  font-size: 11px;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 </style>

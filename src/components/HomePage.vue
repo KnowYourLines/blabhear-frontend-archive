@@ -40,7 +40,11 @@
           >
             <strong> {{ notification.room__display_name }}</strong>
             <br />
-            <br />
+            <div v-if="notification.message__content">
+              {{ notification.message__creator__display_name }}:
+              {{ notification.message__content }}
+            </div>
+            <div v-else><br /></div>
             {{ notification.timestamp }} <br />
           </div>
           <button

@@ -14,7 +14,7 @@
       <PhoneOnlySignIn @signed-in="signedIn" />
       <br />
     </div>
-    <ChatRoom :authToken="authToken" :room="room" />
+    <ChatRoom :authToken="authToken" :room="room" :userId="userId" />
   </div>
 </template>
 
