@@ -65,10 +65,10 @@
             v-for="message in messages"
             :key="message"
             class="bubble-container"
-            :class="{ myMessage: message.creator_user_id === this.userId }"
+            :class="{ myMessage: message.creator__username === this.userId }"
           >
             <div class="bubble">
-              <div class="name">{{ message.creator }}:</div>
+              <div class="name">{{ message.creator__display_name }}:</div>
               <div class="message">{{ message.content }}</div>
             </div>
           </div>
@@ -300,9 +300,10 @@ export default {
         this.displayName = data.display_name;
         this.editableDisplayName = data.display_name;
       } else if ("new_message" in data) {
-        console.log(data);
-        this.messages.push(data.new_message);
-        console.log(this.messages);
+        const newMessage = data.new_message;
+        this.messages.push(newMessage);
+      } else if ("messages" in data) {
+        this.messages = data.messages;
       }
     };
     this.roomWebSocket.onerror = (e) => {
