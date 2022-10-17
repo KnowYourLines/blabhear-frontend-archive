@@ -68,6 +68,7 @@
             :class="{ myMessage: message.creator__username === this.userId }"
           >
             <div class="bubble">
+              <div class="message-timestamp">{{ message.created_at }}</div>
               <div class="name">{{ message.creator__display_name }}:</div>
               <div class="message">{{ message.content }}</div>
             </div>
@@ -328,6 +329,15 @@ export default {
             messageContainer.scrollTop = messageContainer.scrollHeight;
           });
         }
+      } else if (data.type == "refresh_messages") {
+        const maxPage = Math.ceil(this.messages.length / 10);
+        this.messages = [];
+        this.roomWebSocket.send(
+          JSON.stringify({
+            page: maxPage,
+            command: "fetch_messages_up_to_page",
+          })
+        );
       }
     };
     this.roomWebSocket.onerror = (e) => {
@@ -420,6 +430,12 @@ export default {
 
 .bubble-container {
   text-align: left;
+}
+
+.message-timestamp {
+  padding-right: 8px;
+  font-size: 11px;
+  float: right;
 }
 
 .bubble {
