@@ -446,6 +446,7 @@ export default {
   margin: 10px 0;
   width: 230px;
   float: right;
+  word-break: break-all;
 }
 
 .myMessage .bubble {
