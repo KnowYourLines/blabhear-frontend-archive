@@ -41,8 +41,9 @@
             <strong> {{ notification.room__display_name }}</strong>
             <br />
             <div v-if="notification.message__content">
-              {{ notification.message__creator__display_name }}:
-              {{ notification.message__content }}
+              {{ notification.message__creator__display_name }}:{{
+                notification.message__content
+              }}
             </div>
             <div v-else><br /></div>
             {{ notification.timestamp }} <br />
@@ -187,6 +188,7 @@ export default {
   border-style: solid;
   border-color: #10b981;
   cursor: pointer;
+  overflow: clip;
 }
 .notification:hover {
   background: #e0e0e0;
@@ -198,6 +200,7 @@ export default {
   border-color: #10b981;
   background-color: rgb(76, 178, 247);
   cursor: pointer;
+  overflow: clip;
 }
 .unread-notification:hover {
   background: #e0e0e0;
