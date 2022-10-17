@@ -69,6 +69,7 @@
           >
             <div class="bubble">
               <div class="message-timestamp">{{ message.created_at }}</div>
+              <br />
               <div class="name">{{ message.creator__display_name }}:</div>
               <div class="message">{{ message.content }}</div>
             </div>
@@ -383,6 +384,9 @@ export default {
   .column-center {
     width: 100%;
   }
+}
+#members {
+  word-break: break-all;
 }
 .home-button {
   padding: 6px 10px;
