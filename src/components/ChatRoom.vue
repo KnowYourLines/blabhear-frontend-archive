@@ -1,5 +1,5 @@
 <template>
-  <div class="column-center" v-if="leftPublicRoom">
+  <div class="column" v-if="leftRoom">
     <img
       src="@/assets/icons8-home-48.png"
       @click="returnHome"
@@ -11,28 +11,41 @@
       @click="refreshPage"
       class="refresh-button"
     /><br /><br />
-    You left a public room. Refresh to rejoin.
+    You left the room. Refresh to rejoin.
   </div>
   <div v-else-if="userAllowed">
-    <div class="column-left">
-      <div v-if="shareable">
+    <div class="column">
+      <div>
         <img
-          src="@/assets/icons8-share-30.png"
+          src="@/assets/icons8-home-48.png"
+          @click="returnHome"
+          @contextmenu="returnHomeNewTab"
+          @contextmenu.prevent
+          class="home-button"
+        />
+        <img
+          v-if="!showMembers"
+          src="@/assets/icons8-management-48.png"
+          @click="showRoomMembers"
+          @contextmenu.prevent
+          class="show-members"
+        />
+        <img
+          v-if="showMembers"
+          src="@/assets/icons8-communication-50.png"
+          @click="hideRoomMembers"
+          @contextmenu.prevent
+          class="show-chat"
+        />
+        <img
+          v-if="shareable"
+          src="@/assets/icons8-connect-48.png"
           @click="share"
           @contextmenu.prevent
           class="share-button"
         />
       </div>
-      <img
-        src="@/assets/icons8-home-48.png"
-        @click="returnHome"
-        @contextmenu="returnHomeNewTab"
-        @contextmenu.prevent
-        class="home-button"
-      />
-    </div>
-    <div class="column-center">
-      <br />
+
       <label for="name">Room Name:</label><br /><br />
       <div v-if="!editDisplayName">
         <strong>{{ displayName }}</strong
@@ -59,7 +72,7 @@
           class="edit-button"
         />
       </div>
-      <div id="conversation">
+      <div v-if="!showMembers" id="conversation">
         <div class="conversation-container" ref="messages" @scroll="onScroll">
           <div
             v-for="message in messages"
@@ -85,52 +98,51 @@
           <button class="chat-send" @click="sendMessage">Send</button>
         </div>
       </div>
-      <br /><br /><br />
-    </div>
-    <div class="column-right">
-      <br />
-      <Toggle v-model="privateRoom" @change="updatePrivacy">
-        <template v-slot:label="{ checked, classList }">
-          <span :class="classList.label">{{
-            checked ? "Private" : "Public"
-          }}</span>
-        </template>
-      </Toggle>
-      <br /><br />
-      <div id="members">
-        Room members:<br /><br />
-        <span v-for="member in roomMembers" :key="member">
-          {{ member }}<br />
-        </span>
-      </div>
-      <div v-if="privateRoom">
-        <span><br />Users requesting to join:<br /><br /></span>
-        <div id="requests">
-          <span v-for="request in joinRequests" :key="request.user">
-            {{ request.user__display_name }}
-            <div class="btn-group">
-              <button
-                type="button"
-                class="btn"
-                @click="acceptRequest(request.user__username)"
-              >
-                Accept
-              </button>
-              <button
-                type="submit"
-                class="btn btn__primary"
-                @click="rejectRequest(request.user__username)"
-              >
-                Reject
-              </button>
-            </div>
-            <br />
+      <div v-else id="room-members">
+        <br />
+        <Toggle v-model="privateRoom" @change="updatePrivacy">
+          <template v-slot:label="{ checked, classList }">
+            <span :class="classList.label">{{
+              checked ? "Private" : "Public"
+            }}</span>
+          </template>
+        </Toggle>
+        <br /><br />
+        <div v-if="privateRoom">
+          <div v-if="privateRoom && joinRequests.length > 0" id="requests">
+            <span><br /><b>Users requesting to join:</b><br /><br /></span>
+            <span v-for="request in joinRequests" :key="request.user">
+              {{ request.user__display_name }}
+              <div class="btn-group">
+                <button
+                  type="button"
+                  class="btn"
+                  @click="acceptRequest(request.user__username)"
+                >
+                  Accept
+                </button>
+                <button
+                  type="submit"
+                  class="btn btn__primary"
+                  @click="rejectRequest(request.user__username)"
+                >
+                  Reject
+                </button>
+              </div>
+              <br />
+            </span>
+          </div>
+        </div>
+        <div id="members">
+          <b>Room members:</b><br /><br />
+          <span v-for="member in roomMembers" :key="member">
+            {{ member }}<br />
           </span>
         </div>
       </div>
     </div>
   </div>
-  <div class="column-center" v-else>
+  <div class="column" v-else>
     <img
       src="@/assets/icons8-home-48.png"
       @click="returnHome"
@@ -172,16 +184,23 @@ export default {
       userAllowed: true,
       joinRequests: [],
       shareable: null,
-      leftPublicRoom: false,
+      leftRoom: false,
       displayName: null,
       editDisplayName: false,
       editableDisplayName: null,
       messages: [],
       messageToSend: "",
       page: null,
+      showMembers: false,
     };
   },
   methods: {
+    showRoomMembers: function () {
+      this.showMembers = true;
+    },
+    hideRoomMembers: function () {
+      this.showMembers = false;
+    },
     returnHome: function () {
       const url = new URL(window.location.href);
       window.location.href = url.origin;
@@ -264,6 +283,14 @@ export default {
       }
     },
   },
+  updated() {
+    if (this.page == 1) {
+      this.$nextTick(() => {
+        const messageContainer = this.$refs.messages;
+        messageContainer.scrollTop = messageContainer.scrollHeight;
+      });
+    }
+  },
   created() {
     this.shareable = typeof navigator.share === "function";
     const backendUrl = new URL(process.env.VUE_APP_BACKEND_URL);
@@ -310,8 +337,8 @@ export default {
             command: "fetch_join_requests",
           })
         );
-      } else if (data.type == "left_public_room") {
-        this.leftPublicRoom = true;
+      } else if (data.type == "left_room") {
+        this.leftRoom = true;
       } else if ("display_name" in data) {
         this.displayName = data.display_name;
         this.editableDisplayName = data.display_name;
@@ -327,14 +354,8 @@ export default {
       } else if ("messages" in data) {
         this.messages.unshift(...data.messages);
         this.page = data.page;
-        if (this.page == 1) {
-          this.$nextTick(() => {
-            const messageContainer = this.$refs.messages;
-            messageContainer.scrollTop = messageContainer.scrollHeight;
-          });
-        }
       } else if (data.type == "refresh_messages") {
-        const maxPage = Math.ceil(this.messages.length / 10);
+        const maxPage = Math.max(Math.ceil(this.messages.length / 10), 1);
         this.messages = [];
         this.roomWebSocket.send(
           JSON.stringify({
@@ -357,39 +378,19 @@ export default {
 
 <style scoped>
 #members {
-  height: 15vh;
-  overflow-y: auto;
-  overflow-x: visible;
+  word-break: break-all;
 }
 @media (orientation: landscape) {
-  .column-left {
-    float: left;
-    width: 33.333%;
-  }
-  .column-right {
-    float: right;
-    width: 33.333%;
-  }
-  .column-center {
+  .column {
     display: inline-block;
-    width: 33.333%;
+    width: 100%;
   }
 }
 @media (orientation: portrait) {
-  .column-left {
-    width: 100%;
-    background-color: rgb(227, 246, 255);
-  }
-  .column-right {
-    width: 100%;
-    background-color: rgb(227, 246, 255);
-  }
-  .column-center {
+  .column {
+    display: inline-block;
     width: 100%;
   }
-}
-#members {
-  word-break: break-all;
 }
 .home-button {
   padding: 6px 10px;
@@ -409,10 +410,26 @@ export default {
 }
 .share-button {
   padding: 6px 10px;
-  border-radius: 50%;
+  border-radius: 70%;
   cursor: pointer;
 }
 .share-button:hover {
+  background: #e0e0e0;
+}
+.show-members {
+  padding: 6px 10px;
+  border-radius: 70%;
+  cursor: pointer;
+}
+.show-members:hover {
+  background: #e0e0e0;
+}
+.show-chat {
+  padding: 6px 10px;
+  border-radius: 70%;
+  cursor: pointer;
+}
+.show-chat:hover {
   background: #e0e0e0;
 }
 .btn:hover {

@@ -182,6 +182,14 @@ export default {
     width: 100%;
   }
 }
+.btn {
+  background-color: #21cfbc;
+  color: white;
+  padding: 14px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
 .notification {
   padding: 6px 10px;
   border-radius: 50%;

@@ -10,10 +10,6 @@
     <HomePage :authToken="authToken" :userId="userId" @new-room="newRoom" />
   </div>
   <div v-else>
-    <div v-if="isAnonymous">
-      <PhoneOnlySignIn @signed-in="signedIn" />
-      <br />
-    </div>
     <ChatRoom :authToken="authToken" :room="room" :userId="userId" />
   </div>
 </template>
