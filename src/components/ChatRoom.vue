@@ -190,7 +190,7 @@ export default {
       editableDisplayName: null,
       messages: [],
       messageToSend: "",
-      page: null,
+      page: 0,
       showMembers: false,
     };
   },
@@ -350,11 +350,14 @@ export default {
           });
         }
       } else if ("messages" in data) {
-        this.messages.unshift(...data.messages);
-        this.page = data.page;
+        if (data.page > this.page) {
+          this.messages.unshift(...data.messages);
+          this.page = data.page;
+        }
       } else if (data.type == "refresh_messages") {
         const maxPage = Math.max(Math.ceil(this.messages.length / 10), 1);
         this.messages = [];
+        this.page = 0;
         this.roomWebSocket.send(
           JSON.stringify({
             page: maxPage,
