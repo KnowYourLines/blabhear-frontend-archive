@@ -363,6 +363,12 @@ export default {
             command: "fetch_messages_up_to_page",
           })
         );
+      } else if (data.type == "refresh_display_name") {
+        this.roomWebSocket.send(
+          JSON.stringify({
+            command: "fetch_display_name",
+          })
+        );
       }
     };
     this.roomWebSocket.onerror = (e) => {
