@@ -277,7 +277,9 @@ export default {
             command: "fetch_messages",
           })
         );
-        this.$refs.messages.scrollTop = 1;
+        this.$nextTick(() => {
+          this.$refs.messages.scrollTop = 1;
+        });
       }
     },
   },
