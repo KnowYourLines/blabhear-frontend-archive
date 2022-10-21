@@ -119,7 +119,10 @@
                   class="play-button"
                 />
               </div>
-              <div v-else>
+              <p v-if="!isPlaying">
+                <b> {{ recordingMinutes }}:{{ recordingSeconds }}</b>
+              </p>
+              <div v-if="isPlaying">
                 <img
                   src="@/assets/icons8-pause-50.png"
                   @click="pauseRecorded"
@@ -141,7 +144,9 @@
                 class="pause-button"
               />
             </div>
-            <p>{{ recordingMinutes }}:{{ recordingSeconds }}</p>
+            <p>
+              <b>{{ recordingMinutes }}:{{ recordingSeconds }}</b>
+            </p>
             <StopWatch :running="stopwatchRunning" @second-passed="addSecond" />
             <div>
               <img
@@ -528,6 +533,7 @@ export default {
 .bin-button {
   cursor: pointer;
   transition: 0.2s;
+  padding-left: 50px;
 }
 .bin-button:hover {
   transform: scale(1.1);
