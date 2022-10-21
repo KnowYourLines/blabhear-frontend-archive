@@ -88,7 +88,7 @@
             </div>
           </div>
         </div>
-        <div class="input-container">
+        <div v-if="!showRecordInterface" class="input-container">
           <form @submit.prevent="sendMessage">
             <input
               class="chat-input"
@@ -103,6 +103,48 @@
             @click="addRecording"
             class="add-recording"
           />
+        </div>
+        <div v-else>
+          <div class="record-playback" v-if="!isRecording">
+            <img
+              src="@/assets/icons8-record-48.png"
+              @click="recordAudio"
+              class="record-button"
+            />
+            <div class="playback" v-if="recordingData.length > 0">
+              <div v-if="!isPlaying">
+                <img
+                  src="@/assets/icons8-play-50.png"
+                  @click="playRecorded"
+                  class="play-button"
+                />
+              </div>
+              <div v-else>
+                <img
+                  src="@/assets/icons8-pause-50.png"
+                  @click="pauseRecorded"
+                  class="pause-button"
+                />
+              </div>
+              <img
+                src="@/assets/icons8-bin-48.png"
+                @click="deleteRecorded"
+                class="bin-button"
+              />
+            </div>
+          </div>
+          <div v-else>
+            <img
+              src="@/assets/icons8-pause-squared-48.png"
+              @click="saveRecording"
+              class="pause-button"
+            />
+            <img
+              src="@/assets/icons8-bin-48.png"
+              @click="deleteWhileRecording"
+              class="bin-button"
+            />
+          </div>
         </div>
       </div>
       <div v-else id="room-members">
@@ -199,11 +241,19 @@ export default {
       messageToSend: "",
       page: 0,
       showMembers: false,
+      showRecordInterface: false,
+      audio: navigator.mediaDevices.getUserMedia({ audio: true }),
+      isRecording: false,
+      recordingFile: null,
+      recorder: null,
+      recordingData: [],
+      audioPlayer: new Audio(),
+      isPlaying: false,
     };
   },
   methods: {
     addRecording: function () {
-      console.log('hello world')
+      this.showRecordInterface = true;
     },
     showRoomMembers: function () {
       this.showMembers = true;
@@ -289,6 +339,43 @@ export default {
         );
         this.$refs.messages.scrollTop = 1;
       }
+    },
+    recordAudio: function () {
+      this.isRecording = true;
+      this.audio.then((stream) => {
+        this.recorder = new MediaRecorder(stream);
+        this.recorder.start(0); //0 for as little audio buffering as possible so recording starts immediately
+        this.recorder.ondataavailable = (event) => {
+          this.recordingData.push(event.data);
+        };
+      });
+    },
+    saveRecording: function () {
+      this.isRecording = false;
+      this.recorder.stop();
+      this.recordingFile = new Blob(this.recordingData, {
+        type: "audio/ogg; codecs=opus",
+      });
+      this.audioPlayer.src = window.URL.createObjectURL(this.recordingFile);
+    },
+    deleteWhileRecording: function () {
+      this.isRecording = false;
+      this.recorder.ondataavailable = () => {};
+      this.recorder.stop();
+      this.recordingFile = null;
+      this.recordingData = [];
+    },
+    deleteRecorded: function () {
+      this.recordingFile = null;
+      this.recordingData = [];
+    },
+    playRecorded: function () {
+      this.isPlaying = true;
+      this.audioPlayer.play();
+    },
+    pauseRecorded: function () {
+      this.isPlaying = false;
+      this.audioPlayer.pause();
     },
   },
   updated() {
@@ -394,6 +481,34 @@ export default {
 </script>
 
 <style scoped>
+.record-button {
+  cursor: pointer;
+  transition: 0.2s;
+}
+.record-button:hover {
+  transform: scale(1.1);
+}
+.pause-button {
+  cursor: pointer;
+  transition: 0.2s;
+}
+.pause-button:hover {
+  transform: scale(1.1);
+}
+.bin-button {
+  cursor: pointer;
+  transition: 0.2s;
+}
+.bin-button:hover {
+  transform: scale(1.1);
+}
+.play-button {
+  cursor: pointer;
+  transition: 0.2s;
+}
+.play-button:hover {
+  transform: scale(1.1);
+}
 #members {
   word-break: break-all;
 }
@@ -434,6 +549,14 @@ export default {
   background: #e0e0e0;
 }
 .input-container {
+  display: flex;
+  justify-content: center;
+}
+.record-playback {
+  display: flex;
+  justify-content: center;
+}
+.playback {
   display: flex;
   justify-content: center;
 }
