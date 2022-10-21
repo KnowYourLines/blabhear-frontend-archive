@@ -89,13 +89,20 @@
           </div>
         </div>
         <div class="input-container">
-          <input
-            class="chat-input"
-            @keyup.enter="sendMessage"
-            v-model="messageToSend"
-            placeholder="Enter your message"
+          <form @submit.prevent="sendMessage">
+            <input
+              class="chat-input"
+              v-model="messageToSend"
+              placeholder="Enter your message"
+              required
+            />
+            <button class="chat-send" @click="sendMessage">Send</button>
+          </form>
+          <img
+            src="@/assets/icons8-add-record-48.png"
+            @click="addRecording"
+            class="add-recording"
           />
-          <button class="chat-send" @click="sendMessage">Send</button>
         </div>
       </div>
       <div v-else id="room-members">
@@ -195,6 +202,9 @@ export default {
     };
   },
   methods: {
+    addRecording: function () {
+      console.log('hello world')
+    },
     showRoomMembers: function () {
       this.showMembers = true;
     },
@@ -421,6 +431,17 @@ export default {
   cursor: pointer;
 }
 .share-button:hover {
+  background: #e0e0e0;
+}
+.input-container {
+  display: flex;
+  justify-content: center;
+}
+.add-recording {
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.add-recording:hover {
   background: #e0e0e0;
 }
 .show-members {
