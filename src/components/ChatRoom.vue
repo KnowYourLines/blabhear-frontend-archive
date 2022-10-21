@@ -133,17 +133,23 @@
               />
             </div>
           </div>
-          <div v-else>
-            <img
-              src="@/assets/icons8-pause-squared-48.png"
-              @click="saveRecording"
-              class="pause-button"
-            />
-            <img
-              src="@/assets/icons8-bin-48.png"
-              @click="deleteWhileRecording"
-              class="bin-button"
-            />
+          <div class="recording" v-else>
+            <div>
+              <img
+                src="@/assets/icons8-pause-squared-48.png"
+                @click="saveRecording"
+                class="pause-button"
+              />
+            </div>
+            <p>{{ recordingMinutes }}:{{ recordingSeconds }}</p>
+            <StopWatch :running="stopwatchRunning" @second-passed="addSecond" />
+            <div>
+              <img
+                src="@/assets/icons8-bin-48.png"
+                @click="deleteWhileRecording"
+                class="bin-button"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -205,10 +211,12 @@
 </template>
 
 <script>
+import StopWatch from "./StopWatch.vue";
 import Toggle from "@vueform/toggle";
 export default {
   name: "ChatRoom",
   components: {
+    StopWatch,
     Toggle,
   },
   props: {
@@ -249,9 +257,22 @@ export default {
       recordingData: [],
       audioPlayer: new Audio(),
       isPlaying: false,
+      recordingInSeconds: 0,
     };
   },
+  computed: {
+    recordingMinutes() {
+      return Math.floor(this.recordingInSeconds / 60);
+    },
+    recordingSeconds() {
+      const seconds = this.recordingInSeconds % 60;
+      return seconds.toString().padStart(2, "0");
+    },
+  },
   methods: {
+    addSecond: function () {
+      this.recordingInSeconds++;
+    },
     addRecording: function () {
       this.showRecordInterface = true;
     },
@@ -343,6 +364,7 @@ export default {
     recordAudio: function () {
       this.isRecording = true;
       this.isPlaying = false;
+      this.stopwatchRunning = true;
       this.audio.then((stream) => {
         this.recorder = new MediaRecorder(stream);
         this.recorder.start(0); //0 for as little audio buffering as possible so recording starts immediately
@@ -353,6 +375,7 @@ export default {
     },
     saveRecording: function () {
       this.isRecording = false;
+      this.stopwatchRunning = false;
       this.recorder.stop();
       this.recordingFile = new Blob(this.recordingData, {
         type: "audio/ogg; codecs=opus",
@@ -361,14 +384,17 @@ export default {
     },
     deleteWhileRecording: function () {
       this.isRecording = false;
+      this.stopwatchRunning = false;
       this.recorder.ondataavailable = () => {};
       this.recorder.stop();
       this.recordingFile = null;
       this.recordingData = [];
+      this.recordingInSeconds = 0;
     },
     deleteRecorded: function () {
       this.recordingFile = null;
       this.recordingData = [];
+      this.recordingInSeconds = 0;
     },
     playRecorded: function () {
       this.isPlaying = true;
@@ -561,6 +587,10 @@ export default {
   justify-content: center;
 }
 .playback {
+  display: flex;
+  justify-content: center;
+}
+.recording {
   display: flex;
   justify-content: center;
 }
