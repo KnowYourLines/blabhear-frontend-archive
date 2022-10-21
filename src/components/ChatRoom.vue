@@ -342,6 +342,7 @@ export default {
     },
     recordAudio: function () {
       this.isRecording = true;
+      this.isPlaying = false;
       this.audio.then((stream) => {
         this.recorder = new MediaRecorder(stream);
         this.recorder.start(0); //0 for as little audio buffering as possible so recording starts immediately
