@@ -477,6 +477,9 @@ export default {
       console.log("Room WebSocket closed");
       location.reload();
     };
+    this.audioPlayer.onended = () => {
+      this.isPlaying = false;
+    };
   },
 };
 </script>
