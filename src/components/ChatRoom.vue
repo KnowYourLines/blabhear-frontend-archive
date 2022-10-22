@@ -79,7 +79,7 @@
         >
           <div class="your-message">
             <span><br /><b>Your message:</b><br /><br /></span>
-            {{ messageToSend }}<br /><br/>
+            {{ messageToSend }}
           </div>
         </div>
         <div
@@ -115,14 +115,14 @@
           <img
             src="@/assets/icons8-add-record-48.png"
             @click="addRecording"
-            class="record-button"
+            class="add-recording"
           />
         </div>
         <div v-else>
           <div class="record-playback" v-if="!isRecording">
             <div v-if="recordingData.length == 0">
               <img
-                src="@/assets/icons8-add-record-48.png"
+                src="@/assets/icons8-record-48.png"
                 @click="recordAudio"
                 class="record-button"
               />
@@ -134,7 +134,7 @@
                 class="approve-recorded"
               />
               <img
-                src="@/assets/icons8-add-record-48.png"
+                src="@/assets/icons8-record-48.png"
                 @click="recordAudio"
                 class="record-button"
               />
@@ -268,7 +268,6 @@ export default {
   methods: {
     addRecording: function () {
       this.showRecordInterface = true;
-      this.recordAudio();
     },
     showRoomMembers: function () {
       this.showMembers = true;
@@ -600,6 +599,13 @@ export default {
 .recording {
   display: flex;
   justify-content: center;
+}
+.add-recording {
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.add-recording:hover {
+  background: #e0e0e0;
 }
 .show-members {
   padding: 6px 10px;
