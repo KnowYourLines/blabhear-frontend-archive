@@ -603,10 +603,17 @@ export default {
 .input-container {
   display: flex;
   justify-content: center;
+  margin: 0 auto;
+  max-width: 400px;
+  height: 600px;
+  padding: 0 20px;
 }
 .record-playback {
   display: flex;
   justify-content: center;
+  margin: 0 auto;
+  max-width: 400px;
+  padding: 0 20px;
 }
 .playback {
   display: flex;
