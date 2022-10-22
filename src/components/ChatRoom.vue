@@ -79,7 +79,7 @@
         >
           <div class="your-message">
             <span><br /><b>Your message:</b><br /><br /></span>
-            {{ messageToSend }}
+            {{ messageToSend }}<br /><br />
           </div>
         </div>
         <div
@@ -103,20 +103,28 @@
           </div>
         </div>
         <div v-if="!showRecordInterface" class="input-container">
-          <form @submit.prevent="sendMessage">
-            <input
-              class="chat-input"
-              v-model="messageToSend"
-              placeholder="Enter your message"
-              required
+          <div>
+            <form @submit.prevent="sendMessage" id="chat-form">
+              <textarea
+                class="chat-input"
+                v-model.trim="messageToSend"
+                placeholder="Enter your message"
+                required
+              />
+            </form>
+          </div>
+          <div>
+            <button class="chat-send" type="submit" form="chat-form">
+              Send
+            </button>
+          </div>
+          <div>
+            <img
+              src="@/assets/icons8-add-record-48.png"
+              @click="addRecording"
+              class="record-button"
             />
-            <button class="chat-send">Send</button>
-          </form>
-          <img
-            src="@/assets/icons8-add-record-48.png"
-            @click="addRecording"
-            class="add-recording"
-          />
+          </div>
         </div>
         <div v-else>
           <div class="record-playback" v-if="!isRecording">
@@ -271,8 +279,8 @@ export default {
     },
     showRoomMembers: function () {
       this.showMembers = true;
-      if (this.isRecording){
-        this.pauseRecording()
+      if (this.isRecording) {
+        this.pauseRecording();
       }
     },
     hideRoomMembers: function () {
@@ -600,13 +608,6 @@ export default {
   display: flex;
   justify-content: center;
 }
-.add-recording {
-  padding: 6px 10px;
-  cursor: pointer;
-}
-.add-recording:hover {
-  background: #e0e0e0;
-}
 .show-members {
   padding: 6px 10px;
   border-radius: 70%;
@@ -678,6 +679,8 @@ export default {
   box-sizing: border-box;
   margin-right: 5px;
   width: 300px;
+  resize: none;
+  height: 80px;
 }
 .chat-send {
   background-color: #21cfbc;
