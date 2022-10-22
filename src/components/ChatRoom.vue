@@ -601,6 +601,7 @@ export default {
   background: #e0e0e0;
 }
 .input-container {
+  transform: scale(0.95);
   display: flex;
   justify-content: center;
 }
@@ -609,6 +610,7 @@ export default {
   justify-content: center;
 }
 .playback {
+  transform: scale(0.91);
   display: flex;
   justify-content: center;
 }
