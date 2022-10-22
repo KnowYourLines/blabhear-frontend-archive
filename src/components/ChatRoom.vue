@@ -124,33 +124,12 @@
                 @click="recordAudio"
                 class="record-button"
               />
-              <div v-if="!isPlaying">
-                <img
-                  src="@/assets/icons8-play-50.png"
-                  @click="playRecorded"
-                  class="play-button"
-                />
-              </div>
-              <p v-if="!isPlaying">
-                <b>{{ playingMinutes }}:{{ playingSeconds }}</b
-                >/<b>{{ recordingMinutes }}:{{ recordingSeconds }}</b>
-              </p>
-              <div class="playback" v-if="isPlaying">
-                <img
-                  src="@/assets/icons8-pause-50.png"
-                  @click="pauseRecorded"
-                  class="pause-button"
-                />
-                <p>
-                  <b>{{ playingMinutes }}:{{ playingSeconds }}</b
-                  >/<b>{{ recordingMinutes }}:{{ recordingSeconds }}</b>
-                </p>
-                <StopWatch
-                  :running="stopwatchRunning"
-                  @second-passed="addSecondPlaying"
-                />
-              </div>
-
+              <audio
+                controls
+                ref="audio"
+                :src="recordedAudioUrl"
+                controlsList="nodownload nofullscreen noremoteplayback"
+              ></audio>
               <img
                 src="@/assets/icons8-bin-48.png"
                 @click="deleteRecorded"
@@ -166,10 +145,6 @@
                 class="pause-button"
               />
             </div>
-            <p>
-              <b>{{ recordingMinutes }}:{{ recordingSeconds }}</b>
-            </p>
-            <StopWatch :running="stopwatchRunning" @second-passed="addSecond" />
           </div>
         </div>
       </div>
@@ -231,12 +206,10 @@
 </template>
 
 <script>
-import StopWatch from "./StopWatch.vue";
 import Toggle from "@vueform/toggle";
 export default {
   name: "ChatRoom",
   components: {
-    StopWatch,
     Toggle,
   },
   props: {
@@ -275,35 +248,10 @@ export default {
       recordingFile: null,
       recorder: null,
       recordingData: [],
-      audioPlayer: new Audio(),
-      isPlaying: false,
-      recordingInSeconds: 0,
-      playingTimeInSeconds: 0,
+      recordedAudioUrl: "",
     };
   },
-  computed: {
-    recordingMinutes() {
-      return Math.floor(this.recordingInSeconds / 60);
-    },
-    recordingSeconds() {
-      const seconds = this.recordingInSeconds % 60;
-      return seconds.toString().padStart(2, "0");
-    },
-    playingMinutes() {
-      return Math.floor(this.playingTimeInSeconds / 60);
-    },
-    playingSeconds() {
-      const seconds = this.playingTimeInSeconds % 60;
-      return seconds.toString().padStart(2, "0");
-    },
-  },
   methods: {
-    addSecondPlaying: function () {
-      this.playingTimeInSeconds++;
-    },
-    addSecond: function () {
-      this.recordingInSeconds++;
-    },
     addRecording: function () {
       this.showRecordInterface = true;
     },
@@ -396,7 +344,7 @@ export default {
       this.isRecording = true;
       this.isPlaying = false;
       this.stopwatchRunning = true;
-      if (!this.recorder) {
+      if (!this.recorder || this.recorder.state == "inactive") {
         this.audio.then((stream) => {
           this.recorder = new MediaRecorder(stream);
           this.recorder.ondataavailable = (event) => {
@@ -415,9 +363,10 @@ export default {
       this.recordingFile = new Blob(this.recordingData, {
         type: "audio/ogg; codecs=opus",
       });
-      this.audioPlayer.src = window.URL.createObjectURL(this.recordingFile);
+      this.recordedAudioUrl = window.URL.createObjectURL(this.recordingFile);
     },
     deleteRecorded: function () {
+      this.recorder.ondataavailable = () => {};
       this.recorder.stop();
       this.recordingFile = null;
       this.recordingData = [];
@@ -426,16 +375,6 @@ export default {
     },
     approveRecorded: function () {
       this.showRecordInterface = false;
-    },
-    playRecorded: function () {
-      this.isPlaying = true;
-      this.stopwatchRunning = true;
-      this.audioPlayer.play();
-    },
-    pauseRecorded: function () {
-      this.isPlaying = false;
-      this.stopwatchRunning = false;
-      this.audioPlayer.pause();
     },
   },
   updated() {
@@ -536,11 +475,6 @@ export default {
       console.log("Room WebSocket closed");
       location.reload();
     };
-    this.audioPlayer.onended = () => {
-      this.isPlaying = false;
-      this.stopwatchRunning = false;
-      this.playingTimeInSeconds = 0;
-    };
   },
 };
 </script>
@@ -570,7 +504,6 @@ export default {
 .bin-button {
   cursor: pointer;
   transition: 0.2s;
-  padding-left: 50px;
 }
 .bin-button:hover {
   transform: scale(1.1);
