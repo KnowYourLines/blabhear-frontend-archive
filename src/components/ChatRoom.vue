@@ -148,7 +148,6 @@
               />
               <audio
                 controls
-                ref="audio"
                 :src="recordedAudioUrl"
                 controlsList="nodownload nofullscreen noremoteplayback"
               ></audio>
@@ -265,7 +264,7 @@ export default {
       page: 0,
       showMembers: false,
       showRecordInterface: false,
-      audio: navigator.mediaDevices.getUserMedia({ audio: true }),
+      audio: null,
       isRecording: false,
       recordingFile: null,
       recorder: null,
@@ -275,7 +274,16 @@ export default {
   },
   methods: {
     addRecording: function () {
-      this.showRecordInterface = true;
+      navigator.permissions.query({ name: "microphone" }).then((permission) => {
+        if (permission.state === "granted") {
+          this.showRecordInterface = true;
+          if (!this.audio) {
+            this.audio = navigator.mediaDevices.getUserMedia({ audio: true });
+          }
+        } else {
+          this.audio = navigator.mediaDevices.getUserMedia({ audio: true });
+        }
+      });
     },
     showRoomMembers: function () {
       this.showMembers = true;
