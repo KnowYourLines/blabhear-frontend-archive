@@ -272,6 +272,9 @@ export default {
     },
     showRoomMembers: function () {
       this.showMembers = true;
+      if (this.isRecording){
+        this.pauseRecording()
+      }
     },
     hideRoomMembers: function () {
       this.showMembers = false;
