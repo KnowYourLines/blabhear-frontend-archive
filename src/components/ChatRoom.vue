@@ -120,15 +120,25 @@
                 />
               </div>
               <p v-if="!isPlaying">
-                <b> {{ recordingMinutes }}:{{ recordingSeconds }}</b>
+                <b>{{ playingMinutes }}:{{ playingSeconds }}</b
+                >/<b>{{ recordingMinutes }}:{{ recordingSeconds }}</b>
               </p>
-              <div v-if="isPlaying">
+              <div class="playback" v-if="isPlaying">
                 <img
                   src="@/assets/icons8-pause-50.png"
                   @click="pauseRecorded"
                   class="pause-button"
                 />
+                <p>
+                  <b>{{ playingMinutes }}:{{ playingSeconds }}</b
+                  >/<b>{{ recordingMinutes }}:{{ recordingSeconds }}</b>
+                </p>
+                <StopWatch
+                  :running="stopwatchRunning"
+                  @second-passed="addSecondPlaying"
+                />
               </div>
+
               <img
                 src="@/assets/icons8-bin-48.png"
                 @click="deleteRecorded"
@@ -263,6 +273,7 @@ export default {
       audioPlayer: new Audio(),
       isPlaying: false,
       recordingInSeconds: 0,
+      playingTimeInSeconds: 0,
     };
   },
   computed: {
@@ -273,8 +284,18 @@ export default {
       const seconds = this.recordingInSeconds % 60;
       return seconds.toString().padStart(2, "0");
     },
+    playingMinutes() {
+      return Math.floor(this.playingTimeInSeconds / 60);
+    },
+    playingSeconds() {
+      const seconds = this.playingTimeInSeconds % 60;
+      return seconds.toString().padStart(2, "0");
+    },
   },
   methods: {
+    addSecondPlaying: function () {
+      this.playingTimeInSeconds++;
+    },
     addSecond: function () {
       this.recordingInSeconds++;
     },
@@ -403,10 +424,12 @@ export default {
     },
     playRecorded: function () {
       this.isPlaying = true;
+      this.stopwatchRunning = true;
       this.audioPlayer.play();
     },
     pauseRecorded: function () {
       this.isPlaying = false;
+      this.stopwatchRunning = false;
       this.audioPlayer.pause();
     },
   },
@@ -510,6 +533,8 @@ export default {
     };
     this.audioPlayer.onended = () => {
       this.isPlaying = false;
+      this.stopwatchRunning = false;
+      this.playingTimeInSeconds = 0;
     };
   },
 };
