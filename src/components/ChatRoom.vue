@@ -73,7 +73,21 @@
         />
       </div>
       <div v-if="!showMembers" id="conversation">
-        <div class="conversation-container" ref="messages" @scroll="onScroll">
+        <div
+          class="message-container"
+          v-if="showRecordInterface && messageToSend.length > 0"
+        >
+          <div class="your-message">
+            <span><br /><b>Your message:</b><br /><br /></span>
+            {{ messageToSend }}
+          </div>
+        </div>
+        <div
+          v-else
+          class="conversation-container"
+          ref="messages"
+          @scroll="onScroll"
+        >
           <div
             v-for="message in messages"
             :key="message"
@@ -96,7 +110,7 @@
               placeholder="Enter your message"
               required
             />
-            <button class="chat-send" @click="sendMessage">Send</button>
+            <button class="chat-send">Send</button>
           </form>
           <img
             src="@/assets/icons8-add-record-48.png"
@@ -480,6 +494,19 @@ export default {
 </script>
 
 <style scoped>
+.your-message {
+  position: absolute;
+  bottom: 0;
+}
+.message-container {
+  display: flex;
+  justify-content: center;
+  margin: 0 auto;
+  max-width: 400px;
+  height: 600px;
+  word-break: break-all;
+  position: relative;
+}
 .approve-recorded {
   cursor: pointer;
   transition: 0.2s;
