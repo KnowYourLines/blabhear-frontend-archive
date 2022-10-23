@@ -514,7 +514,7 @@ export default {
     };
     this.roomWebSocket.onclose = () => {
       console.log("Room WebSocket closed");
-      // location.reload();
+      location.reload();
     };
   },
 };
