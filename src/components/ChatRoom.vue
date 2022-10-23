@@ -74,17 +74,10 @@
       </div>
       <div v-if="!showMembers" id="conversation">
         <div
-          class="message-container"
-          v-if="showRecordInterface && messageToSend.length > 0"
-        >
-          <div class="your-message">
-            <span><br /><b>Your message:</b><br /><br /></span>
-            {{ messageToSend }}<br /><br />
-          </div>
-        </div>
-        <div
-          v-else
-          class="conversation-container"
+          :class="{
+            'mini-conversation-container': showRecordInterface,
+            'conversation-container': !showRecordInterface,
+          }"
           ref="messages"
           @scroll="onScroll"
         >
@@ -100,6 +93,15 @@
               <div class="name">{{ message.creator__display_name }}:</div>
               <div class="message">{{ message.content }}</div>
             </div>
+          </div>
+        </div>
+        <div v-if="showRecordInterface && messageToSend.length > 0">
+          <div class="message-container">
+            <textarea
+              class="read-chat-input"
+              v-model="messageToSend"
+              readonly
+            />
           </div>
         </div>
         <div v-if="!showRecordInterface" class="input-container">
@@ -523,18 +525,9 @@ export default {
 </script>
 
 <style scoped>
-.your-message {
-  position: absolute;
-  bottom: 0;
-}
 .message-container {
   display: flex;
   justify-content: center;
-  margin: 0 auto;
-  max-width: 400px;
-  height: 600px;
-  word-break: break-all;
-  position: relative;
 }
 .approve-recorded {
   cursor: pointer;
@@ -678,6 +671,15 @@ export default {
 .edit-button:hover {
   background: #e0e0e0;
 }
+.mini-conversation-container {
+  margin: 0 auto;
+  max-width: 400px;
+  height: 520px;
+  padding: 0 20px;
+  border: 3px solid #f1f1f1;
+  overflow: scroll;
+}
+
 .conversation-container {
   margin: 0 auto;
   max-width: 400px;
@@ -712,6 +714,18 @@ export default {
   background-color: #abf1ea;
   border: 2px solid #87e0d7;
   float: left;
+}
+.read-chat-input {
+  padding: 12px 20px;
+  margin: 8px 0;
+  display: inline-block;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+  margin-right: 5px;
+  width: 300px;
+  resize: none;
+  height: 80px;
 }
 .chat-input {
   padding: 12px 20px;
