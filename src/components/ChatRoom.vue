@@ -382,7 +382,6 @@ export default {
             command: "fetch_messages",
           })
         );
-        this.$refs.messages.scrollTop = 1;
       }
     },
     recordAudio: function () {
@@ -421,14 +420,6 @@ export default {
       this.sendMessage();
       this.deleteRecorded();
     },
-  },
-  updated() {
-    if (this.page == 1 && this.$refs.messages) {
-      this.$nextTick(() => {
-        const messageContainer = this.$refs.messages;
-        messageContainer.scrollTop = messageContainer.scrollHeight;
-      });
-    }
   },
   created() {
     this.shareable = typeof navigator.share === "function";
@@ -483,8 +474,16 @@ export default {
         this.editableDisplayName = data.display_name;
       } else if ("new_message" in data) {
         const newMessage = data.new_message;
+        const messageContainer = this.$refs.messages;
+        const wasAtBottom =
+          messageContainer.getBoundingClientRect().bottom <=
+            messageContainer.scrollTop + messageContainer.clientHeight &&
+          messageContainer.scrollHeight ==
+            Math.round(
+              messageContainer.scrollTop + messageContainer.clientHeight
+            );
         this.messages.push(newMessage);
-        if (newMessage.creator__username == this.userId) {
+        if (newMessage.creator__username == this.userId || wasAtBottom) {
           this.$nextTick(() => {
             const messageContainer = this.$refs.messages;
             messageContainer.scrollTop = messageContainer.scrollHeight;
@@ -494,6 +493,11 @@ export default {
         if (data.page > this.page) {
           this.messages.unshift(...data.messages);
           this.page = data.page;
+          const oldScrollHeight = this.$refs.messages.scrollHeight;
+          this.$nextTick(() => {
+            this.$refs.messages.scrollTop =
+              this.$refs.messages.scrollHeight - oldScrollHeight;
+          });
         }
       } else if (data.type == "refresh_messages") {
         const maxPage = Math.max(Math.ceil(this.messages.length / 10), 1);
