@@ -162,7 +162,7 @@
             </div>
           </div>
           <div class="recording" v-else>
-            <div v-if="recorder">
+            <div>
               <img
                 src="@/assets/icons8-pause-squared-48.png"
                 @click="pauseRecording"
@@ -399,12 +399,14 @@ export default {
       }
     },
     pauseRecording: function () {
-      this.isRecording = false;
-      this.recorder.pause();
-      this.recordingFile = new Blob(this.recordingData, {
-        type: "audio/ogg; codecs=opus",
-      });
-      this.recordedAudioUrl = window.URL.createObjectURL(this.recordingFile);
+      if (this.recorder) {
+        this.isRecording = false;
+        this.recorder.pause();
+        this.recordingFile = new Blob(this.recordingData, {
+          type: "audio/ogg; codecs=opus",
+        });
+        this.recordedAudioUrl = window.URL.createObjectURL(this.recordingFile);
+      }
     },
     deleteRecorded: function () {
       this.recorder.ondataavailable = () => {};
