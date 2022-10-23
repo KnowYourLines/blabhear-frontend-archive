@@ -104,7 +104,7 @@
         </div>
         <div v-if="!showRecordInterface" class="input-container">
           <div>
-            <form @submit.prevent="sendMessage" id="chat-form">
+            <form @submit.prevent="askToRecord" id="chat-form">
               <textarea
                 class="chat-input"
                 v-model.trim="messageToSend"
@@ -118,31 +118,34 @@
               Send
             </button>
           </div>
-          <div>
-            <img
-              src="@/assets/icons8-add-record-48.png"
-              @click="addRecording"
-              class="record-button"
-            />
-          </div>
         </div>
         <div v-else>
           <div class="record-playback" v-if="!isRecording">
             <div v-if="recordingData.length == 0">
               <img
-                src="@/assets/icons8-record-48.png"
-                @click="recordAudio"
-                class="record-button"
+                src="@/assets/icons8-u-turn-to-left-50.png"
+                @click="cancelSend"
+                class="back-button"
+              />
+              <img
+                src="@/assets/icons8-add-record-60.png"
+                @click="addRecording"
+                class="add-record"
+              />
+              <img
+                src="@/assets/icons8-block-microphone-60.png"
+                @click="sendMessage"
+                class="no-record"
               />
             </div>
             <div class="playback" v-else>
               <img
-                src="@/assets/icons8-checkmark-48.png"
+                src="@/assets/icons8-checkmark-50.png"
                 @click="approveRecorded"
                 class="approve-recorded"
               />
               <img
-                src="@/assets/icons8-record-48.png"
+                src="@/assets/icons8-microphone-60.png"
                 @click="recordAudio"
                 class="record-button"
               />
@@ -159,7 +162,7 @@
             </div>
           </div>
           <div class="recording" v-else>
-            <div>
+            <div v-if="recorder">
               <img
                 src="@/assets/icons8-pause-squared-48.png"
                 @click="pauseRecording"
@@ -273,13 +276,16 @@ export default {
     };
   },
   methods: {
+    askToRecord: function () {
+      this.showRecordInterface = true;
+    },
     addRecording: function () {
       navigator.permissions.query({ name: "microphone" }).then((permission) => {
         if (permission.state === "granted") {
-          this.showRecordInterface = true;
           if (!this.audio) {
             this.audio = navigator.mediaDevices.getUserMedia({ audio: true });
           }
+          this.recordAudio();
         } else {
           this.audio = navigator.mediaDevices.getUserMedia({ audio: true });
         }
@@ -353,6 +359,9 @@ export default {
         })
       );
     },
+    cancelSend: function () {
+      this.showRecordInterface = false;
+    },
     sendMessage: function () {
       this.roomWebSocket.send(
         JSON.stringify({
@@ -361,6 +370,7 @@ export default {
         })
       );
       this.messageToSend = "";
+      this.showRecordInterface = false;
     },
     onScroll({ target: { scrollTop } }) {
       if (scrollTop == 0) {
@@ -376,7 +386,6 @@ export default {
     recordAudio: function () {
       this.isRecording = true;
       this.isPlaying = false;
-      this.stopwatchRunning = true;
       if (!this.recorder || this.recorder.state == "inactive") {
         this.audio.then((stream) => {
           this.recorder = new MediaRecorder(stream);
@@ -391,7 +400,6 @@ export default {
     },
     pauseRecording: function () {
       this.isRecording = false;
-      this.stopwatchRunning = false;
       this.recorder.pause();
       this.recordingFile = new Blob(this.recordingData, {
         type: "audio/ogg; codecs=opus",
@@ -404,14 +412,14 @@ export default {
       this.recordingFile = null;
       this.recordingData = [];
       this.recordingInSeconds = 0;
-      this.showRecordInterface = false;
     },
     approveRecorded: function () {
-      this.showRecordInterface = false;
+      this.sendMessage();
+      this.deleteRecorded();
     },
   },
   updated() {
-    if (this.page == 1) {
+    if (this.page == 1 && this.$refs.messages) {
       this.$nextTick(() => {
         const messageContainer = this.$refs.messages;
         messageContainer.scrollTop = messageContainer.scrollHeight;
@@ -506,7 +514,7 @@ export default {
     };
     this.roomWebSocket.onclose = () => {
       console.log("Room WebSocket closed");
-      location.reload();
+      // location.reload();
     };
   },
 };
@@ -531,6 +539,30 @@ export default {
   transition: 0.2s;
 }
 .approve-recorded:hover {
+  transform: scale(1.1);
+}
+.back-button {
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.back-button:hover {
+  transform: scale(1.1);
+}
+.add-record {
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.add-record:hover {
+  transform: scale(1.1);
+}
+.no-record {
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.no-record:hover {
   transform: scale(1.1);
 }
 .record-button {
@@ -601,7 +633,6 @@ export default {
   background: #e0e0e0;
 }
 .input-container {
-  transform: scale(0.95);
   display: flex;
   justify-content: center;
 }
@@ -610,7 +641,7 @@ export default {
   justify-content: center;
 }
 .playback {
-  transform: scale(0.91);
+  transform: scale(0.9);
   display: flex;
   justify-content: center;
 }
