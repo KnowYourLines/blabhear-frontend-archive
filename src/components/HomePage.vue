@@ -14,6 +14,7 @@
         <input
           id="name"
           type="text"
+          maxlength="150"
           v-model="editableDisplayName"
           ref="editName"
         />

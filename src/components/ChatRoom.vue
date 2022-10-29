@@ -59,6 +59,7 @@
         <input
           id="name"
           type="text"
+          maxlength="150"
           v-model="editableDisplayName"
           ref="editName"
         />
@@ -617,7 +618,7 @@ export default {
   transform: scale(1.1);
 }
 #members {
-  word-break: break-all;
+  word-break: break-word;
 }
 @media (orientation: landscape) {
   .column {
@@ -741,7 +742,7 @@ export default {
   margin: 10px 0;
   width: 230px;
   float: right;
-  word-break: break-all;
+  word-break: break-word;
 }
 
 .myMessage .bubble {
