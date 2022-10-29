@@ -727,6 +727,12 @@ export default {
   float: right;
 }
 
+.message-audio audio::-webkit-media-controls-enclosure {
+  max-width: 230px;
+  margin: 10px 0;
+  margin-right: 70px;
+}
+
 .bubble {
   border: 2px solid #f1f1f1;
   background-color: #fdfbfa;
