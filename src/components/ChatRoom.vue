@@ -364,10 +364,11 @@ export default {
     cancelSend: function () {
       this.showRecordInterface = false;
     },
-    sendMessage: function () {
+    sendMessage: function (recordingUrl = null) {
       this.roomWebSocket.send(
         JSON.stringify({
           message: this.messageToSend,
+          upload: recordingUrl,
           command: "send_message",
         })
       );
@@ -417,8 +418,11 @@ export default {
       this.recordingInSeconds = 0;
     },
     approveRecorded: function () {
-      this.sendMessage();
-      this.deleteRecorded();
+      this.roomWebSocket.send(
+        JSON.stringify({
+          command: "fetch_upload_url",
+        })
+      );
     },
   },
   created() {
@@ -515,6 +519,19 @@ export default {
             command: "fetch_display_name",
           })
         );
+      } else if ("upload_url" in data) {
+        const requestOptions = {
+          method: "PUT",
+          headers: { "Content-Type": "application/ogg" },
+          body: this.recordingFile,
+        };
+        fetch(data.upload_url, requestOptions)
+          .then((response) => {
+            console.log(response);
+            this.sendMessage(data.upload_url);
+            this.deleteRecorded();
+          })
+          .catch((error) => console.log(error));
       }
     };
     this.roomWebSocket.onerror = (e) => {
