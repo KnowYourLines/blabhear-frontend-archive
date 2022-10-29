@@ -88,6 +88,13 @@
             :class="{ myMessage: message.creator__username === this.userId }"
           >
             <div class="bubble">
+              <div class="message-audio" v-if="message.filename != 'None'">
+                <audio
+                  controls
+                  :src="`https://storage.googleapis.com/blabhear-uploads/${message.filename}`"
+                  controlsList="nodownload nofullscreen noremoteplayback"
+                ></audio>
+              </div>
               <div class="message-timestamp">{{ message.created_at }}</div>
               <br />
               <div class="name">{{ message.creator__display_name }}:</div>
@@ -136,7 +143,7 @@
               />
               <img
                 src="@/assets/icons8-block-microphone-60.png"
-                @click="sendMessage"
+                @click="sendMessage(null)"
                 class="no-record"
               />
             </div>
@@ -364,11 +371,11 @@ export default {
     cancelSend: function () {
       this.showRecordInterface = false;
     },
-    sendMessage: function (recordingUrl = null) {
+    sendMessage: function (filename) {
       this.roomWebSocket.send(
         JSON.stringify({
           message: this.messageToSend,
-          upload: recordingUrl,
+          filename: filename,
           command: "send_message",
         })
       );
@@ -528,7 +535,7 @@ export default {
         fetch(data.upload_url, requestOptions)
           .then((response) => {
             console.log(response);
-            this.sendMessage(data.upload_url);
+            this.sendMessage(data.filename);
             this.deleteRecorded();
           })
           .catch((error) => console.log(error));
