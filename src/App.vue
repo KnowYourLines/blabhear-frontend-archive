@@ -3,11 +3,11 @@
     <SignIn @signed-in="signedIn" />
   </div>
   <div v-else-if="authToken && !room">
-    <div v-if="isAnonymous">
-      <PhoneOnlySignIn @signed-in="signedIn" />
-      <br />
-    </div>
     <HomePage :authToken="authToken" :userId="userId" @new-room="newRoom" />
+    <div v-if="isAnonymous">
+      <br />
+      <PhoneOnlySignIn @signed-in="signedIn" />
+    </div>
   </div>
   <div v-else>
     <ChatRoom :authToken="authToken" :room="room" :userId="userId" />

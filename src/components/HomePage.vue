@@ -29,7 +29,7 @@
         />
       </div>
       <br /><br />
-      <button class="btn" @click="createNewRoom">New room</button>
+      <button class="btn" @click="createNewRoom">New group chat</button>
       <div>
         <span v-for="notification in notifications" :key="notification.room">
           <br />
@@ -51,10 +51,10 @@
           </div>
           <button
             type="submit"
-            class="btn btn__primary"
+            class="btn btn__primary exit-btn"
             @click="exitRoom(notification.room)"
           >
-            Exit room
+            Exit group chat
           </button>
           <br />
         </span>
@@ -185,6 +185,14 @@ export default {
 }
 .btn {
   background-color: #21cfbc;
+  color: white;
+  padding: 14px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.exit-btn {
+  background-color: #10b981;
   color: white;
   padding: 14px 20px;
   border: none;

@@ -46,7 +46,7 @@
         />
       </div>
 
-      <label for="name">Room Name:</label><br /><br />
+      <label for="name">Group Name:</label><br /><br />
       <div v-if="!editDisplayName">
         <strong>{{ displayName }}</strong
         ><br /><img
@@ -218,7 +218,7 @@
           </div>
         </div>
         <div id="members">
-          <b>Room members:</b><br /><br />
+          <b>Group members:</b><br /><br />
           <span v-for="member in roomMembers" :key="member">
             {{ member }}<br />
           </span>
