@@ -527,6 +527,12 @@ export default {
             command: "fetch_display_name",
           })
         );
+      } else if (data.type == "room_notified") {
+        this.roomWebSocket.send(
+          JSON.stringify({
+            command: "read_room_notification",
+          })
+        );
       } else if ("upload_url" in data) {
         const requestOptions = {
           method: "PUT",
