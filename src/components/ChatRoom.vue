@@ -193,8 +193,8 @@
         </Toggle>
         <br /><br />
         <div v-if="privateRoom">
-          <div v-if="privateRoom && joinRequests.length > 0" id="requests">
-            <span><br /><b>Users requesting to join:</b><br /><br /></span>
+          <span><br /><b>Users requesting to join:</b><br /><br /></span>
+          <div v-if="joinRequests.length > 0" id="requests">
             <span v-for="request in joinRequests" :key="request.user">
               {{ request.user__display_name }}
               <div class="btn-group">
@@ -213,9 +213,10 @@
                   Reject
                 </button>
               </div>
-              <br />
             </span>
           </div>
+          <div v-else>None</div>
+          <br />
         </div>
         <div id="members">
           <b>Group members:</b><br /><br />
