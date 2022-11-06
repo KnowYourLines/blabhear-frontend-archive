@@ -63,7 +63,6 @@
 </template>
 
 <script>
-import { v4 as uuidv4 } from "uuid";
 export default {
   name: "HomePage",
   props: {
@@ -87,8 +86,7 @@ export default {
   },
   methods: {
     createNewRoom: function () {
-      const room = uuidv4();
-      this.$emit("new-room", room);
+      this.$emit("new-room");
     },
     visitRoom: function (room) {
       const url = new URL(window.location.href);

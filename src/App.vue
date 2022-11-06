@@ -11,6 +11,7 @@
 </template>
 
 <script>
+import { v4 as uuidv4 } from "uuid";
 import SignIn from "./components/SignIn.vue";
 import HomePage from "./components/HomePage.vue";
 import ChatRoom from "./components/ChatRoom.vue";
@@ -34,15 +35,20 @@ export default {
       this.authToken = token;
       this.userId = userId;
     },
-    newRoom: function (room) {
-      const url = new URL(window.location.href);
+    newRoom: function () {
+      const room = uuidv4();
+      const url = new URL(window.location.href.split("?")[0]);
       url.searchParams.set("room", room);
       window.location.href = url;
     },
   },
   mounted() {
     const urlParams = new URLSearchParams(window.location.search);
-    this.room = urlParams.get("room");
+    if (urlParams.get("new") !== null) {
+      this.newRoom();
+    } else {
+      this.room = urlParams.get("room");
+    }
   },
 };
 </script>
