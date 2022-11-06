@@ -37,13 +37,6 @@
           @contextmenu.prevent
           class="show-chat"
         />
-        <img
-          v-if="shareable"
-          src="@/assets/icons8-connect-48.png"
-          @click="share"
-          @contextmenu.prevent
-          class="share-button"
-        />
       </div>
 
       <label for="name">Group Name:</label><br /><br />
@@ -183,7 +176,14 @@
         </div>
       </div>
       <div v-else id="room-members">
-        <br />
+        <img
+          v-if="shareable"
+          src="@/assets/icons8-add-users-48.png"
+          @click="share"
+          @contextmenu.prevent
+          class="share-button"
+        />
+        <br /><br />
         <Toggle v-model="privateRoom" @change="updatePrivacy">
           <template v-slot:label="{ checked, classList }">
             <span :class="classList.label">{{
