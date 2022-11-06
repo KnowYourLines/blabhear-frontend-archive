@@ -44,11 +44,7 @@ export default {
   },
   mounted() {
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get("new") !== null) {
-      this.newRoom();
-    } else {
-      this.room = urlParams.get("room");
-    }
+    this.room = urlParams.get("room");
   },
 };
 </script>
