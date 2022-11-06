@@ -176,14 +176,7 @@
         </div>
       </div>
       <div v-else id="room-members">
-        <img
-          v-if="shareable"
-          src="@/assets/icons8-add-users-48.png"
-          @click="share"
-          @contextmenu.prevent
-          class="share-button"
-        />
-        <br /><br />
+        <br />
         <Toggle v-model="privateRoom" @change="updatePrivacy">
           <template v-slot:label="{ checked, classList }">
             <span :class="classList.label">{{
@@ -193,7 +186,7 @@
         </Toggle>
         <br /><br />
         <div v-if="privateRoom">
-          <span><br /><b>Users requesting to join:</b><br /><br /></span>
+          <span><b>Users requesting to join:</b><br /><br /></span>
           <div v-if="joinRequests.length > 0" id="requests">
             <span v-for="request in joinRequests" :key="request.user">
               {{ request.user__display_name }}
@@ -205,6 +198,7 @@
                 >
                   Accept
                 </button>
+                <div class="divider" />
                 <button
                   type="submit"
                   class="btn btn__primary"
@@ -213,11 +207,19 @@
                   Reject
                 </button>
               </div>
-            </span>
+              <br
+            /></span>
           </div>
           <div v-else>None</div>
           <br />
         </div>
+        <img
+          v-if="shareable"
+          src="@/assets/icons8-add-users-48.png"
+          @click="share"
+          @contextmenu.prevent
+          class="share-button"
+        />
         <div id="members">
           <b>Group members:</b><br /><br />
           <span v-for="member in roomMembers" :key="member">
@@ -561,6 +563,11 @@ export default {
 </script>
 
 <style scoped>
+.divider {
+  width: 50px;
+  height: auto;
+  display: inline-block;
+}
 .message-container {
   display: flex;
   justify-content: center;
