@@ -25,24 +25,14 @@ export default {
     };
     firebase.initializeApp(firebaseConfig);
     this.ui = new firebaseui.auth.AuthUI(firebase.auth());
-    this.uiConfig = {
-      signInSuccessUrl: window.location.href,
-      signInOptions: [
-        {
-          provider: firebase.auth.PhoneAuthProvider.PROVIDER_ID,
-          defaultCountry: "GB",
-        },
-        firebaseui.auth.AnonymousAuthProvider.PROVIDER_ID,
-      ],
-    };
     firebase.auth().onAuthStateChanged((user) => {
       if (user) {
         user.getIdToken().then((token) => {
           this.token = token;
-          this.$emit("signed-in", this.token, user.uid, user.isAnonymous);
+          this.$emit("signed-in", this.token, user.uid);
         });
       } else {
-        this.ui.start(this.$refs.firebaseui, this.uiConfig);
+        firebase.auth().signInAnonymously();
       }
     });
   },

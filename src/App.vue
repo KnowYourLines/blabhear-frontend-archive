@@ -4,10 +4,6 @@
   </div>
   <div v-else-if="authToken && !room">
     <HomePage :authToken="authToken" :userId="userId" @new-room="newRoom" />
-    <div v-if="isAnonymous">
-      <br />
-      <PhoneOnlySignIn @signed-in="signedIn" />
-    </div>
   </div>
   <div v-else>
     <ChatRoom :authToken="authToken" :room="room" :userId="userId" />
@@ -16,7 +12,6 @@
 
 <script>
 import SignIn from "./components/SignIn.vue";
-import PhoneOnlySignIn from "./components/PhoneOnlySignIn.vue";
 import HomePage from "./components/HomePage.vue";
 import ChatRoom from "./components/ChatRoom.vue";
 
@@ -26,21 +21,18 @@ export default {
     SignIn,
     HomePage,
     ChatRoom,
-    PhoneOnlySignIn,
   },
   data() {
     return {
       authToken: null,
       userId: null,
       room: null,
-      isAnonymous: null,
     };
   },
   methods: {
-    signedIn: function (token, userId, isAnonymous) {
+    signedIn: function (token, userId) {
       this.authToken = token;
       this.userId = userId;
-      this.isAnonymous = isAnonymous;
     },
     newRoom: function (room) {
       const url = new URL(window.location.href);
