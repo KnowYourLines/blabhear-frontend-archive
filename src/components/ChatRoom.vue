@@ -67,14 +67,7 @@
         />
       </div>
       <div v-if="!showMembers" id="conversation">
-        <div
-          :class="{
-            'mini-conversation-container': showRecordInterface,
-            'conversation-container': !showRecordInterface,
-          }"
-          ref="messages"
-          @scroll="onScroll"
-        >
+        <div class="conversation-container" ref="messages" @scroll="onScroll">
           <div
             v-for="message in messages"
             :key="message"
@@ -96,82 +89,44 @@
             </div>
           </div>
         </div>
-        <div v-if="showRecordInterface && messageToSend.length > 0">
-          <div class="message-container">
-            <textarea
-              class="read-chat-input"
-              v-model="messageToSend"
-              readonly
+        <div class="record-playback" v-if="!isRecording">
+          <div v-if="recordingData.length == 0">
+            <img
+              src="@/assets/icons8-add-record-60.png"
+              @click="addRecording"
+              class="add-record"
+            />
+          </div>
+          <div class="playback" v-else>
+            <img
+              src="@/assets/icons8-checkmark-50.png"
+              @click="approveRecorded"
+              class="approve-recorded"
+            />
+            <img
+              src="@/assets/icons8-microphone-60.png"
+              @click="recordAudio"
+              class="record-button"
+            />
+            <audio
+              controls
+              :src="recordedAudioUrl"
+              controlsList="nodownload nofullscreen noremoteplayback"
+            ></audio>
+            <img
+              src="@/assets/icons8-bin-48.png"
+              @click="deleteRecorded"
+              class="bin-button"
             />
           </div>
         </div>
-        <div v-if="!showRecordInterface" class="input-container">
+        <div class="recording" v-else>
           <div>
-            <form @submit.prevent="askToRecord" id="chat-form">
-              <textarea
-                class="chat-input"
-                v-model.trim="messageToSend"
-                placeholder="Enter your message"
-                required
-              />
-            </form>
-          </div>
-          <div>
-            <button class="chat-send" type="submit" form="chat-form">
-              Send
-            </button>
-          </div>
-        </div>
-        <div v-else>
-          <div class="record-playback" v-if="!isRecording">
-            <div v-if="recordingData.length == 0">
-              <img
-                src="@/assets/icons8-u-turn-to-left-50.png"
-                @click="cancelSend"
-                class="back-button"
-              />
-              <img
-                src="@/assets/icons8-add-record-60.png"
-                @click="addRecording"
-                class="add-record"
-              />
-              <img
-                src="@/assets/icons8-block-microphone-60.png"
-                @click="sendMessage(null)"
-                class="no-record"
-              />
-            </div>
-            <div class="playback" v-else>
-              <img
-                src="@/assets/icons8-checkmark-50.png"
-                @click="approveRecorded"
-                class="approve-recorded"
-              />
-              <img
-                src="@/assets/icons8-microphone-60.png"
-                @click="recordAudio"
-                class="record-button"
-              />
-              <audio
-                controls
-                :src="recordedAudioUrl"
-                controlsList="nodownload nofullscreen noremoteplayback"
-              ></audio>
-              <img
-                src="@/assets/icons8-bin-48.png"
-                @click="deleteRecorded"
-                class="bin-button"
-              />
-            </div>
-          </div>
-          <div class="recording" v-else>
-            <div>
-              <img
-                src="@/assets/icons8-pause-squared-48.png"
-                @click="pauseRecording"
-                class="pause-button"
-              />
-            </div>
+            <img
+              src="@/assets/icons8-pause-squared-48.png"
+              @click="pauseRecording"
+              class="pause-button"
+            />
           </div>
         </div>
       </div>
@@ -276,10 +231,8 @@ export default {
       editDisplayName: false,
       editableDisplayName: null,
       messages: [],
-      messageToSend: "",
       page: 0,
       showMembers: false,
-      showRecordInterface: false,
       audio: null,
       isRecording: false,
       recordingFile: null,
@@ -289,9 +242,6 @@ export default {
     };
   },
   methods: {
-    askToRecord: function () {
-      this.showRecordInterface = true;
-    },
     addRecording: function () {
       navigator.permissions.query({ name: "microphone" }).then((permission) => {
         if (permission.state === "granted") {
@@ -372,19 +322,13 @@ export default {
         })
       );
     },
-    cancelSend: function () {
-      this.showRecordInterface = false;
-    },
     sendMessage: function (filename) {
       this.roomWebSocket.send(
         JSON.stringify({
-          message: this.messageToSend,
           filename: filename,
           command: "send_message",
         })
       );
-      this.messageToSend = "";
-      this.showRecordInterface = false;
     },
     onScroll({ target: { scrollTop } }) {
       if (scrollTop == 0) {
@@ -568,23 +512,11 @@ export default {
   height: auto;
   display: inline-block;
 }
-.message-container {
-  display: flex;
-  justify-content: center;
-}
 .approve-recorded {
   cursor: pointer;
   transition: 0.2s;
 }
 .approve-recorded:hover {
-  transform: scale(1.1);
-}
-.back-button {
-  padding: 6px 10px;
-  cursor: pointer;
-  transition: 0.2s;
-}
-.back-button:hover {
   transform: scale(1.1);
 }
 .add-record {
@@ -593,14 +525,6 @@ export default {
   transition: 0.2s;
 }
 .add-record:hover {
-  transform: scale(1.1);
-}
-.no-record {
-  padding: 6px 10px;
-  cursor: pointer;
-  transition: 0.2s;
-}
-.no-record:hover {
   transform: scale(1.1);
 }
 .record-button {
@@ -670,10 +594,6 @@ export default {
 .share-button:hover {
   background: #e0e0e0;
 }
-.input-container {
-  display: flex;
-  justify-content: center;
-}
 .record-playback {
   display: flex;
   justify-content: center;
@@ -713,14 +633,6 @@ export default {
 }
 .edit-button:hover {
   background: #e0e0e0;
-}
-.mini-conversation-container {
-  margin: 0 auto;
-  max-width: 400px;
-  height: 520px;
-  padding: 0 20px;
-  border: 3px solid #f1f1f1;
-  overflow: scroll;
 }
 
 .conversation-container {
@@ -763,39 +675,6 @@ export default {
   background-color: #abf1ea;
   border: 2px solid #87e0d7;
   float: left;
-}
-.read-chat-input {
-  padding: 12px 20px;
-  margin: 8px 0;
-  display: inline-block;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  box-sizing: border-box;
-  margin-right: 5px;
-  width: 300px;
-  resize: none;
-  height: 80px;
-}
-.chat-input {
-  padding: 12px 20px;
-  margin: 8px 0;
-  display: inline-block;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  box-sizing: border-box;
-  margin-right: 5px;
-  width: 300px;
-  resize: none;
-  height: 80px;
-}
-.chat-send {
-  background-color: #21cfbc;
-  color: white;
-  padding: 14px 20px;
-  margin: 8px 0;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
 }
 .name {
   padding-right: 8px;
