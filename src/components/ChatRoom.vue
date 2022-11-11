@@ -438,143 +438,154 @@ export default {
         })
       );
     },
+    connectWebSocket: function () {
+      const backendUrl = new URL(process.env.VUE_APP_BACKEND_URL);
+      const ws_scheme = backendUrl.protocol == "https:" ? "wss" : "ws";
+      const path =
+        ws_scheme +
+        "://" +
+        backendUrl.hostname +
+        ":" +
+        backendUrl.port +
+        "/ws/room/" +
+        this.room +
+        "/?token=" +
+        this.authToken;
+      if (this.roomWebSocket) {
+        this.roomWebSocket.close();
+      }
+      this.roomWebSocket = new WebSocket(path);
+      this.roomWebSocket.onopen = () => {
+        console.log("Room WebSocket open");
+      };
+      this.roomWebSocket.onmessage = (message) => {
+        const data = JSON.parse(message.data);
+        if ("members" in data) {
+          this.roomMembers = data.members;
+        } else if (data.type == "refresh_members") {
+          this.roomWebSocket.send(
+            JSON.stringify({
+              command: "fetch_members",
+            })
+          );
+        } else if ("privacy" in data) {
+          this.privateRoom = data.privacy;
+        } else if (data.type == "refresh_privacy") {
+          this.roomWebSocket.send(JSON.stringify({ command: "fetch_privacy" }));
+        } else if ("allowed" in data) {
+          this.userAllowed = data.allowed;
+        } else if (data.type == "refresh_allowed_status") {
+          this.roomWebSocket.send(
+            JSON.stringify({ command: "fetch_allowed_status" })
+          );
+        } else if ("join_requests" in data) {
+          this.joinRequests = data.join_requests;
+        } else if (data.type == "refresh_join_requests") {
+          this.roomWebSocket.send(
+            JSON.stringify({
+              command: "fetch_join_requests",
+            })
+          );
+        } else if (data.type == "left_room") {
+          this.leftRoom = true;
+        } else if ("display_name" in data) {
+          this.displayName = data.display_name;
+          this.editableDisplayName = data.display_name;
+        } else if ("new_message" in data) {
+          const newMessage = data.new_message;
+          const messageContainer = this.$refs.messages;
+          const wasAtBottom =
+            messageContainer.getBoundingClientRect().bottom <=
+              messageContainer.scrollTop + messageContainer.clientHeight &&
+            messageContainer.scrollHeight ==
+              Math.round(
+                messageContainer.scrollTop + messageContainer.clientHeight
+              );
+          this.messages.push(newMessage);
+          if (newMessage.creator__username == this.userId || wasAtBottom) {
+            this.$nextTick(() => {
+              const messageContainer = this.$refs.messages;
+              messageContainer.scrollTop = messageContainer.scrollHeight;
+            });
+          }
+        } else if ("messages" in data) {
+          if (data.page > this.page) {
+            this.messages.unshift(...data.messages);
+            this.page = data.page;
+            const oldScrollHeight = this.$refs.messages.scrollHeight;
+            this.$nextTick(() => {
+              this.$refs.messages.scrollTop =
+                this.$refs.messages.scrollHeight - oldScrollHeight;
+            });
+            if (data.refresh_messages_in) {
+              clearTimeout();
+              setTimeout(() => {
+                const maxPage = Math.max(
+                  Math.ceil(this.messages.length / 10),
+                  1
+                );
+                this.messages = [];
+                this.page = 0;
+                this.roomWebSocket.send(
+                  JSON.stringify({
+                    page: maxPage,
+                    command: "fetch_messages_up_to_page",
+                  })
+                );
+              }, data.refresh_messages_in);
+            }
+          }
+        } else if (data.type == "refresh_messages") {
+          const maxPage = Math.max(Math.ceil(this.messages.length / 10), 1);
+          this.messages = [];
+          this.page = 0;
+          this.roomWebSocket.send(
+            JSON.stringify({
+              page: maxPage,
+              command: "fetch_messages_up_to_page",
+            })
+          );
+        } else if (data.type == "refresh_display_name") {
+          this.roomWebSocket.send(
+            JSON.stringify({
+              command: "fetch_display_name",
+            })
+          );
+        } else if (data.type == "room_notified") {
+          this.roomWebSocket.send(
+            JSON.stringify({
+              command: "read_room_notification",
+            })
+          );
+        } else if ("upload_url" in data) {
+          const requestOptions = {
+            method: "PUT",
+            headers: { "Content-Type": "application/ogg" },
+            body: this.recordingFile,
+          };
+          fetch(data.upload_url, requestOptions)
+            .then(() => {
+              this.sendMessage(data.filename);
+              this.deleteRecorded();
+            })
+            .catch((error) => console.log(error));
+        }
+      };
+      this.roomWebSocket.onerror = (e) => {
+        console.log(e.message);
+      };
+      this.roomWebSocket.onclose = () => {
+        console.log("Room WebSocket closed");
+      };
+    },
+  },
+  watch: {
+    userId() {
+      this.connectWebSocket();
+    },
   },
   created() {
     this.shareable = typeof navigator.share === "function";
-    const backendUrl = new URL(process.env.VUE_APP_BACKEND_URL);
-    const ws_scheme = backendUrl.protocol == "https:" ? "wss" : "ws";
-    const path =
-      ws_scheme +
-      "://" +
-      backendUrl.hostname +
-      ":" +
-      backendUrl.port +
-      "/ws/room/" +
-      this.room +
-      "/?token=" +
-      this.authToken;
-    this.roomWebSocket = new WebSocket(path);
-    this.roomWebSocket.onopen = () => {
-      console.log("Room WebSocket open");
-    };
-    this.roomWebSocket.onmessage = (message) => {
-      const data = JSON.parse(message.data);
-      if ("members" in data) {
-        this.roomMembers = data.members;
-      } else if (data.type == "refresh_members") {
-        this.roomWebSocket.send(
-          JSON.stringify({
-            command: "fetch_members",
-          })
-        );
-      } else if ("privacy" in data) {
-        this.privateRoom = data.privacy;
-      } else if (data.type == "refresh_privacy") {
-        this.roomWebSocket.send(JSON.stringify({ command: "fetch_privacy" }));
-      } else if ("allowed" in data) {
-        this.userAllowed = data.allowed;
-      } else if (data.type == "refresh_allowed_status") {
-        this.roomWebSocket.send(
-          JSON.stringify({ command: "fetch_allowed_status" })
-        );
-      } else if ("join_requests" in data) {
-        this.joinRequests = data.join_requests;
-      } else if (data.type == "refresh_join_requests") {
-        this.roomWebSocket.send(
-          JSON.stringify({
-            command: "fetch_join_requests",
-          })
-        );
-      } else if (data.type == "left_room") {
-        this.leftRoom = true;
-      } else if ("display_name" in data) {
-        this.displayName = data.display_name;
-        this.editableDisplayName = data.display_name;
-      } else if ("new_message" in data) {
-        const newMessage = data.new_message;
-        const messageContainer = this.$refs.messages;
-        const wasAtBottom =
-          messageContainer.getBoundingClientRect().bottom <=
-            messageContainer.scrollTop + messageContainer.clientHeight &&
-          messageContainer.scrollHeight ==
-            Math.round(
-              messageContainer.scrollTop + messageContainer.clientHeight
-            );
-        this.messages.push(newMessage);
-        if (newMessage.creator__username == this.userId || wasAtBottom) {
-          this.$nextTick(() => {
-            const messageContainer = this.$refs.messages;
-            messageContainer.scrollTop = messageContainer.scrollHeight;
-          });
-        }
-      } else if ("messages" in data) {
-        if (data.page > this.page) {
-          this.messages.unshift(...data.messages);
-          this.page = data.page;
-          const oldScrollHeight = this.$refs.messages.scrollHeight;
-          this.$nextTick(() => {
-            this.$refs.messages.scrollTop =
-              this.$refs.messages.scrollHeight - oldScrollHeight;
-          });
-          if (data.refresh_messages_in) {
-            clearTimeout();
-            setTimeout(() => {
-              const maxPage = Math.max(Math.ceil(this.messages.length / 10), 1);
-              this.messages = [];
-              this.page = 0;
-              this.roomWebSocket.send(
-                JSON.stringify({
-                  page: maxPage,
-                  command: "fetch_messages_up_to_page",
-                })
-              );
-            }, data.refresh_messages_in);
-          }
-        }
-      } else if (data.type == "refresh_messages") {
-        const maxPage = Math.max(Math.ceil(this.messages.length / 10), 1);
-        this.messages = [];
-        this.page = 0;
-        this.roomWebSocket.send(
-          JSON.stringify({
-            page: maxPage,
-            command: "fetch_messages_up_to_page",
-          })
-        );
-      } else if (data.type == "refresh_display_name") {
-        this.roomWebSocket.send(
-          JSON.stringify({
-            command: "fetch_display_name",
-          })
-        );
-      } else if (data.type == "room_notified") {
-        this.roomWebSocket.send(
-          JSON.stringify({
-            command: "read_room_notification",
-          })
-        );
-      } else if ("upload_url" in data) {
-        const requestOptions = {
-          method: "PUT",
-          headers: { "Content-Type": "application/ogg" },
-          body: this.recordingFile,
-        };
-        fetch(data.upload_url, requestOptions)
-          .then((response) => {
-            console.log(response);
-            this.sendMessage(data.filename);
-            this.deleteRecorded();
-          })
-          .catch((error) => console.log(error));
-      }
-    };
-    this.roomWebSocket.onerror = (e) => {
-      console.log(e.message);
-    };
-    this.roomWebSocket.onclose = () => {
-      console.log("Room WebSocket closed");
-      location.reload();
-    };
   },
 };
 </script>

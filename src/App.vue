@@ -1,8 +1,8 @@
 <template>
-  <div v-if="!authToken">
-    <SignIn @signed-in="signedIn" />
-  </div>
-  <div v-else-if="authToken && !room">
+  <div v-if="!room">
+    <div v-if="isAnonymous">
+      <PhoneSignIn @signed-in="signedIn" />
+    </div>
     <HomePage :authToken="authToken" :userId="userId" @new-room="newRoom" />
   </div>
   <div v-else>
@@ -12,28 +12,31 @@
 
 <script>
 import { v4 as uuidv4 } from "uuid";
-import SignIn from "./components/SignIn.vue";
+import firebase from "firebase/app";
+import PhoneSignIn from "./components/PhoneSignIn.vue";
 import HomePage from "./components/HomePage.vue";
 import ChatRoom from "./components/ChatRoom.vue";
 
 export default {
   name: "App",
   components: {
-    SignIn,
     HomePage,
     ChatRoom,
+    PhoneSignIn,
   },
   data() {
     return {
-      authToken: null,
-      userId: null,
+      authToken: "",
+      userId: "",
       room: null,
+      isAnonymous: null,
     };
   },
   methods: {
-    signedIn: function (token, userId) {
+    signedIn: function (token, userId, isAnonymous) {
       this.authToken = token;
       this.userId = userId;
+      this.isAnonymous = isAnonymous;
     },
     newRoom: function () {
       const room = uuidv4();
@@ -45,6 +48,28 @@ export default {
   mounted() {
     const urlParams = new URLSearchParams(window.location.search);
     this.room = urlParams.get("room");
+    const firebaseConfig = {
+      apiKey: process.env.VUE_APP_FIREBASE_API_KEY,
+      authDomain: process.env.VUE_APP_FIREBASE_AUTH_DOMAIN,
+      projectId: process.env.VUE_APP_FIREBASE_PROJECT_ID,
+      storageBucket: process.env.VUE_APP_FIREBASE_STORAGE_BUCKET,
+      messagingSenderId: process.env.VUE_APP_FIREBASE_MESSAGING_SENDER_ID,
+      appId: process.env.VUE_APP_FIREBASE_APP_ID,
+      measurementId: process.env.VUE_APP_FIREBASE_MEASUREMENT_ID,
+    };
+    firebase.initializeApp(firebaseConfig);
+    firebase.auth().onAuthStateChanged((user) => {
+      if (user) {
+        user.getIdToken().then((token) => {
+          this.token = token;
+          this.authToken = token;
+          this.userId = user.uid;
+          this.isAnonymous = user.isAnonymous;
+        });
+      } else {
+        firebase.auth().signInAnonymously();
+      }
+    });
   },
 };
 </script>

@@ -29,7 +29,9 @@
         />
       </div>
       <br /><br />
-      <button class="btn" @click="createNewRoom">New group chat</button>
+      <button class="btn" @click="createNewRoom" @contextmenu.prevent>
+        New group chat
+      </button>
       <div>
         <span v-for="notification in notifications" :key="notification.room">
           <br />
@@ -52,6 +54,7 @@
             type="submit"
             class="btn btn__primary exit-btn"
             @click="exitRoom(notification.room)"
+            @contextmenu.prevent
           >
             Exit group chat
           </button>
@@ -122,46 +125,53 @@ export default {
         })
       );
     },
-  },
-  created() {
-    const backendUrl = new URL(process.env.VUE_APP_BACKEND_URL);
-    const ws_scheme = backendUrl.protocol == "https:" ? "wss" : "ws";
-    const path =
-      ws_scheme +
-      "://" +
-      backendUrl.hostname +
-      ":" +
-      backendUrl.port +
-      "/ws/user/" +
-      this.userId +
-      "/?token=" +
-      this.authToken;
-    this.userWebSocket = new WebSocket(path);
-    this.userWebSocket.onopen = () => {
-      console.log("User WebSocket open");
-    };
-    this.userWebSocket.onmessage = (message) => {
-      const data = JSON.parse(message.data);
-      if ("notifications" in data) {
-        this.notifications = data.notifications;
-      } else if (data.type == "refresh_notifications") {
-        this.userWebSocket.send(
-          JSON.stringify({
-            command: "fetch_notifications",
-          })
-        );
-      } else if ("display_name" in data) {
-        this.displayName = data.display_name;
-        this.editableDisplayName = data.display_name;
+    connectWebsocket: function () {
+      const backendUrl = new URL(process.env.VUE_APP_BACKEND_URL);
+      const ws_scheme = backendUrl.protocol == "https:" ? "wss" : "ws";
+      const path =
+        ws_scheme +
+        "://" +
+        backendUrl.hostname +
+        ":" +
+        backendUrl.port +
+        "/ws/user/" +
+        this.userId +
+        "/?token=" +
+        this.authToken;
+      if (this.userWebSocket) {
+        this.userWebSocket.close();
       }
-    };
-    this.userWebSocket.onerror = (e) => {
-      console.log(e.message);
-    };
-    this.userWebSocket.onclose = () => {
-      console.log("User WebSocket closed");
-      location.reload();
-    };
+      this.userWebSocket = new WebSocket(path);
+      this.userWebSocket.onopen = () => {
+        console.log("User WebSocket open");
+      };
+      this.userWebSocket.onmessage = (message) => {
+        const data = JSON.parse(message.data);
+        if ("notifications" in data) {
+          this.notifications = data.notifications;
+        } else if (data.type == "refresh_notifications") {
+          this.userWebSocket.send(
+            JSON.stringify({
+              command: "fetch_notifications",
+            })
+          );
+        } else if ("display_name" in data) {
+          this.displayName = data.display_name;
+          this.editableDisplayName = data.display_name;
+        }
+      };
+      this.userWebSocket.onerror = (e) => {
+        console.log(e.message);
+      };
+      this.userWebSocket.onclose = () => {
+        console.log("User WebSocket closed");
+      };
+    },
+  },
+  watch: {
+    userId() {
+      this.connectWebsocket();
+    },
   },
 };
 </script>
