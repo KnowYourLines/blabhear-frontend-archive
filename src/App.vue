@@ -46,7 +46,7 @@ export default {
       authToken: "",
       userId: "",
       room: null,
-      isAnonymous: null,
+      isAnonymous: true,
       verifyPhone: false,
     };
   },
