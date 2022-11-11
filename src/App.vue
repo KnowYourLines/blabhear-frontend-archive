@@ -1,7 +1,24 @@
 <template>
   <div v-if="!room">
     <div v-if="isAnonymous">
-      <PhoneSignIn @signed-in="signedIn" />
+      <div v-if="!verifyPhone">
+        <img
+          src="@/assets/icons8-decision-50.png"
+          @click="verify"
+          class="verify-button"
+        />
+      </div>
+      <div v-else>
+        <img
+          src="@/assets/icons8-close-30.png"
+          @click="cancelVerify"
+          class="verify-button"
+        />
+        <PhoneSignIn @signed-in="signedIn" /><br />
+      </div>
+    </div>
+    <div v-else>
+      <img src="@/assets/icons8-checked-user-52.png" />
     </div>
     <HomePage :authToken="authToken" :userId="userId" @new-room="newRoom" />
   </div>
@@ -30,9 +47,16 @@ export default {
       userId: "",
       room: null,
       isAnonymous: null,
+      verifyPhone: false,
     };
   },
   methods: {
+    verify: function () {
+      this.verifyPhone = true;
+    },
+    cancelVerify: function () {
+      this.verifyPhone = false;
+    },
     signedIn: function (token, userId, isAnonymous) {
       this.authToken = token;
       this.userId = userId;
@@ -82,5 +106,15 @@ export default {
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
+}
+</style>
+<style scoped>
+.verify-button {
+  padding: 6px 10px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.verify-button:hover {
+  background: #e0e0e0;
 }
 </style>
