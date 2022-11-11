@@ -78,7 +78,7 @@
               <div class="message-audio" v-if="message.filename != 'None'">
                 <audio
                   controls
-                  :src="`https://storage.googleapis.com/blabhear-uploads/${message.filename}`"
+                  :src="message.download"
                   controlsList="nodownload nofullscreen noremoteplayback"
                 ></audio>
               </div>
@@ -516,6 +516,20 @@ export default {
             this.$refs.messages.scrollTop =
               this.$refs.messages.scrollHeight - oldScrollHeight;
           });
+          if (data.refresh_messages_in) {
+            clearTimeout();
+            setTimeout(() => {
+              const maxPage = Math.max(Math.ceil(this.messages.length / 10), 1);
+              this.messages = [];
+              this.page = 0;
+              this.roomWebSocket.send(
+                JSON.stringify({
+                  page: maxPage,
+                  command: "fetch_messages_up_to_page",
+                })
+              );
+            }, data.refresh_messages_in);
+          }
         }
       } else if (data.type == "refresh_messages") {
         const maxPage = Math.max(Math.ceil(this.messages.length / 10), 1);
