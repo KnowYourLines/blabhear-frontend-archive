@@ -85,7 +85,47 @@
               <div class="message-timestamp">{{ message.created_at }}</div>
               <br />
               <div class="name">{{ message.creator__display_name }}:</div>
-              <div class="message">{{ message.content }}</div>
+              <div
+                class="message"
+                v-if="
+                  editMessageFilename != message.filename &&
+                  message.creator__username == userId
+                "
+              >
+                <img
+                  src="@/assets/icons8-edit-24.png"
+                  @click="editMessage(message.filename, message.content)"
+                  class="edit-button"
+                />{{ message.content }}
+              </div>
+              <div
+                class="message"
+                v-else-if="
+                  editMessageFilename == message.filename &&
+                  message.creator__username == userId
+                "
+              >
+                <form @submit.prevent="updateMessage" id="edit-msg">
+                  <textarea
+                    class="edit-message"
+                    v-model.trim="messageToEdit"
+                    placeholder="Enter your message"
+                    required
+                  />
+                </form>
+                <button class="edit-msg-btn" type="submit" form="edit-msg">
+                  <img
+                    src="@/assets/icons8-checkmark-48.png"
+                    class="edit-button"
+                  />
+                </button>
+                <img
+                  src="@/assets/icons8-cancel-48.png"
+                  @click="cancelEditMessage"
+                  class="edit-button"
+                />
+              </div>
+              <div class="message" v-else>{{ message.content }}</div>
             </div>
           </div>
         </div>
@@ -239,9 +279,28 @@ export default {
       recorder: null,
       recordingData: [],
       recordedAudioUrl: "",
+      editMessageFilename: "",
+      messageToEdit: "",
     };
   },
   methods: {
+    updateMessage: function () {
+      this.roomWebSocket.send(
+        JSON.stringify({
+          command: "edit_message",
+          edited_message: this.messageToEdit,
+          filename: this.editMessageFilename,
+        })
+      );
+      this.editMessageFilename = "";
+    },
+    editMessage: function (filename, message) {
+      this.editMessageFilename = filename;
+      this.messageToEdit = message;
+    },
+    cancelEditMessage: function () {
+      this.editMessageFilename = "";
+    },
     addRecording: function () {
       navigator.permissions.query({ name: "microphone" }).then((permission) => {
         if (permission.state === "granted") {
@@ -675,6 +734,19 @@ export default {
   background-color: #abf1ea;
   border: 2px solid #87e0d7;
   float: left;
+}
+.edit-message {
+  width: 230px;
+  resize: none;
+  height: 80px;
+}
+.edit-msg-btn {
+  background-color: transparent;
+  background-repeat: no-repeat;
+  border: none;
+  cursor: pointer;
+  overflow: hidden;
+  outline: none;
 }
 .name {
   padding-right: 8px;
