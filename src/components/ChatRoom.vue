@@ -130,14 +130,17 @@
           </div>
         </div>
         <div class="record-playback" v-if="!isRecording">
-          <div v-if="!addingRecording">
+          <div v-if="recordingData.length == 0">
             <img
               src="@/assets/icons8-add-record-60.png"
               @click="addRecording"
               class="add-record"
             />
           </div>
-          <div class="playback" v-else>
+          <div
+            class="playback"
+            v-else-if="lastApprovedRecordedAudioUrl != recordedAudioUrl"
+          >
             <img
               src="@/assets/icons8-checkmark-50.png"
               @click="approveRecorded"
@@ -281,7 +284,7 @@ export default {
       recordedAudioUrl: "",
       editMessageFilename: "",
       messageToEdit: "",
-      addingRecording: false,
+      lastApprovedRecordedAudioUrl: "",
     };
   },
   methods: {
@@ -308,7 +311,6 @@ export default {
           if (!this.audio) {
             this.audio = navigator.mediaDevices.getUserMedia({ audio: true });
           }
-          this.addingRecording = true;
           this.recordAudio();
         } else {
           this.audio = navigator.mediaDevices.getUserMedia({ audio: true });
@@ -427,15 +429,13 @@ export default {
       }
     },
     deleteRecorded: function () {
-      this.addingRecording = false;
       this.recorder.ondataavailable = () => {};
       this.recorder.stop();
       this.recordingFile = null;
       this.recordingData = [];
-      this.recordingInSeconds = 0;
     },
     approveRecorded: function () {
-      this.addingRecording = false;
+      this.lastApprovedRecordedAudioUrl = this.recordedAudioUrl;
       this.roomWebSocket.send(
         JSON.stringify({
           command: "fetch_upload_url",
