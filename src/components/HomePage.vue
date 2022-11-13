@@ -141,9 +141,6 @@ export default {
         this.userId +
         "/?token=" +
         this.authToken;
-      if (this.userWebSocket) {
-        this.userWebSocket.close();
-      }
       this.userWebSocket = new WebSocket(path);
       this.userWebSocket.onopen = () => {
         console.log("User WebSocket open");
@@ -168,12 +165,17 @@ export default {
       };
       this.userWebSocket.onclose = () => {
         console.log("User WebSocket closed");
+        this.connectWebsocket();
       };
     },
   },
   watch: {
     userId() {
-      this.connectWebsocket();
+      if (this.userWebSocket) {
+        this.userWebSocket.close();
+      } else {
+        this.connectWebsocket();
+      }
     },
   },
 };

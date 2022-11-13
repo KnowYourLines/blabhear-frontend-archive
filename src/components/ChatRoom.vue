@@ -455,9 +455,6 @@ export default {
         this.room +
         "/?token=" +
         this.authToken;
-      if (this.roomWebSocket) {
-        this.roomWebSocket.close();
-      }
       this.roomWebSocket = new WebSocket(path);
       this.roomWebSocket.onopen = () => {
         console.log("Room WebSocket open");
@@ -580,12 +577,17 @@ export default {
       };
       this.roomWebSocket.onclose = () => {
         console.log("Room WebSocket closed");
+        this.connectWebSocket();
       };
     },
   },
   watch: {
     userId() {
-      this.connectWebSocket();
+      if (this.roomWebSocket) {
+        this.roomWebSocket.close();
+      } else {
+        this.connectWebSocket();
+      }
     },
   },
   created() {
