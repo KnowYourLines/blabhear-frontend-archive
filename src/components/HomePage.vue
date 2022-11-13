@@ -47,6 +47,9 @@
               {{ notification.message__creator__display_name }}:
               {{ notification.message__content }}
             </div>
+            <div v-else-if="notification.message__creator__display_name">
+              {{ notification.message__creator__display_name }} spoke.
+            </div>
             <div v-else><br /></div>
             {{ notification.timestamp }} <br />
           </div>
