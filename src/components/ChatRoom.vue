@@ -88,24 +88,24 @@
               <div
                 class="message"
                 v-if="
-                  editMessageFilename != message.filename &&
+                  editMessageId != message.id &&
                   message.creator__username == userId
                 "
               >
                 <img
                   src="@/assets/icons8-edit-24.png"
-                  @click="editMessage(message.filename, message.content)"
+                  @click="editMessage(message.id, message.content)"
                   class="edit-button"
                 />{{ message.content }}
               </div>
               <div
                 class="message"
                 v-else-if="
-                  editMessageFilename == message.filename &&
+                  editMessageId == message.id &&
                   message.creator__username == userId
                 "
               >
-                <form @submit.prevent="updateMessage" id="edit-msg">
+                <form @submit.prevent="updateMessage(message.id)" id="edit-msg">
                   <textarea
                     class="edit-message"
                     v-model.trim="messageToEdit"
@@ -130,12 +130,29 @@
           </div>
         </div>
         <div class="record-playback" v-if="!isRecording">
-          <div v-if="recordingData.length == 0">
-            <img
-              src="@/assets/icons8-add-record-60.png"
-              @click="addRecording"
-              class="add-record"
-            />
+          <div v-if="recordingData.length == 0" class="input-container">
+            <div>
+              <form @submit.prevent="sendMessage" id="chat-form">
+                <textarea
+                  class="chat-input"
+                  v-model.trim="messageToSend"
+                  placeholder="Enter your message"
+                  required
+                />
+              </form>
+            </div>
+            <div v-if="messageToSend.length == 0">
+              <img
+                src="@/assets/icons8-add-record-60.png"
+                @click="addRecording"
+                class="add-record"
+              />
+            </div>
+            <div v-else>
+              <button class="chat-send" type="submit" form="chat-form">
+                Send
+              </button>
+            </div>
           </div>
           <div
             class="playback"
@@ -274,6 +291,7 @@ export default {
       editDisplayName: false,
       editableDisplayName: null,
       messages: [],
+      messageToSend: "",
       page: 0,
       showMembers: false,
       audio: null,
@@ -282,28 +300,28 @@ export default {
       recorder: null,
       recordingData: [],
       recordedAudioUrl: "",
-      editMessageFilename: "",
+      editMessageId: "",
       messageToEdit: "",
       lastApprovedRecordedAudioUrl: "",
     };
   },
   methods: {
-    updateMessage: function () {
+    updateMessage: function (messageId) {
       this.roomWebSocket.send(
         JSON.stringify({
           command: "edit_message",
           edited_message: this.messageToEdit,
-          filename: this.editMessageFilename,
+          message_id: messageId,
         })
       );
-      this.editMessageFilename = "";
+      this.editMessageId = "";
     },
-    editMessage: function (filename, message) {
-      this.editMessageFilename = filename;
+    editMessage: function (messageId, message) {
+      this.editMessageId = messageId;
       this.messageToEdit = message;
     },
     cancelEditMessage: function () {
-      this.editMessageFilename = "";
+      this.editMessageId = "";
     },
     addRecording: function () {
       navigator.permissions.query({ name: "microphone" }).then((permission) => {
@@ -388,10 +406,12 @@ export default {
     sendMessage: function (filename) {
       this.roomWebSocket.send(
         JSON.stringify({
+          message: this.messageToSend,
           filename: filename,
           command: "send_message",
         })
       );
+      this.messageToSend = "";
     },
     onScroll({ target: { scrollTop } }) {
       if (scrollTop == 0) {
@@ -597,6 +617,31 @@ export default {
 </script>
 
 <style scoped>
+.input-container {
+  display: flex;
+  justify-content: center;
+}
+.chat-input {
+  padding: 12px 20px;
+  margin: 8px 0;
+  display: inline-block;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+  margin-right: 5px;
+  width: 300px;
+  resize: none;
+  height: 80px;
+}
+.chat-send {
+  background-color: #21cfbc;
+  color: white;
+  padding: 14px 20px;
+  margin: 8px 0;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
 .divider {
   width: 50px;
   height: auto;
