@@ -139,7 +139,7 @@
                 <textarea
                   class="chat-input"
                   v-model.trim="messageToSend"
-                  @keyup="this.messageToSendLength = messageToSend.length"
+                  @input="this.messageToSendLength = messageToSend.length"
                   placeholder="Enter your message"
                   required
                 />
