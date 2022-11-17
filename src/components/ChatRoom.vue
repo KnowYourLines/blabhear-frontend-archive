@@ -144,7 +144,7 @@
                 />
               </form>
             </div>
-            <div v-if="messageToSend.length == 0">
+            <div v-if="messageToSend">
               <img
                 src="@/assets/icons8-add-record-60.png"
                 @click="addRecording"
