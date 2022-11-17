@@ -144,9 +144,7 @@
                 />
               </form>
             </div>
-            {{messageToSend}}
-            {{messageToSend.length}}
-            <div v-if="!messageToSend">
+            <div v-if="messageToSendExists">
               <img
                 src="@/assets/icons8-add-record-60.png"
                 @click="addRecording"
@@ -309,6 +307,11 @@ export default {
       messageToEdit: "",
       lastApprovedRecordedAudioUrl: "",
     };
+  },
+  computed: {
+    messageToSendExists() {
+      return this.messageToSend.length == 0;
+    },
   },
   methods: {
     updateMessage: function (messageId) {
