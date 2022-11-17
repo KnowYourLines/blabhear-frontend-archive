@@ -138,14 +138,16 @@
               <form @submit.prevent="sendMessage" id="chat-form">
                 <textarea
                   class="chat-input"
-                  v-model.trim="messageToSend"
-                  @input="this.messageToSendLength = messageToSend.length"
+                  :value="messageToSend"
+                  @input="
+                    (event) => (messageToSend = event.target.value.trim())
+                  "
                   placeholder="Enter your message"
                   required
                 />
               </form>
             </div>
-            <div v-if="messageToSendLength == 0">
+            <div v-if="messageToSend.length == 0">
               <img
                 src="@/assets/icons8-add-record-60.png"
                 @click="addRecording"
@@ -296,7 +298,6 @@ export default {
       editableDisplayName: null,
       messages: [],
       messageToSend: "",
-      messageToSendLength: 0,
       page: 0,
       showMembers: false,
       audio: null,
