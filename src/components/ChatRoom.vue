@@ -139,12 +139,13 @@
                 <textarea
                   class="chat-input"
                   v-model.trim="messageToSend"
+                  @keyup="this.messageToSendLength = messageToSend.length"
                   placeholder="Enter your message"
                   required
                 />
               </form>
             </div>
-            <div v-if="messageToSendExists">
+            <div v-if="messageToSendLength == 0">
               <img
                 src="@/assets/icons8-add-record-60.png"
                 @click="addRecording"
@@ -295,6 +296,7 @@ export default {
       editableDisplayName: null,
       messages: [],
       messageToSend: "",
+      messageToSendLength: 0,
       page: 0,
       showMembers: false,
       audio: null,
@@ -307,11 +309,6 @@ export default {
       messageToEdit: "",
       lastApprovedRecordedAudioUrl: "",
     };
-  },
-  computed: {
-    messageToSendExists() {
-      return this.messageToSend.length == 0;
-    },
   },
   methods: {
     updateMessage: function (messageId) {
