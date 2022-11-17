@@ -83,6 +83,9 @@
                 ></audio>
               </div>
               <div class="message-timestamp">{{ message.created_at }}</div>
+              <div v-if="message.edited_at" class="edited-timestamp">
+                Edited at {{ message.edited_at }}
+              </div>
               <br />
               <div class="name">{{ message.creator__display_name }}:</div>
               <div
@@ -784,6 +787,11 @@ export default {
 }
 
 .message-timestamp {
+  padding-right: 8px;
+  font-size: 11px;
+  float: right;
+}
+.edited-timestamp {
   padding-right: 8px;
   font-size: 11px;
   float: right;
