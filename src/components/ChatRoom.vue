@@ -144,6 +144,8 @@
                 />
               </form>
             </div>
+            {{messageToSend}}
+            {{messageToSend.length}}
             <div v-if="!messageToSend">
               <img
                 src="@/assets/icons8-add-record-60.png"
