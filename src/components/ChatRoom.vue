@@ -166,7 +166,10 @@
               </button>
             </div>
           </div>
-          <div class="playback" v-else>
+          <div
+            class="playback"
+            v-else-if="recordingFilename != lastApprovedRecordingFilename"
+          >
             <img
               src="@/assets/icons8-checkmark-50.png"
               @click="approveRecorded"
