@@ -133,7 +133,13 @@
           </div>
         </div>
         <div class="record-playback" v-if="!isRecording">
-          <div v-if="recordingData.length == 0" class="input-container">
+          <div
+            v-if="
+              recordingData.length == 0 &&
+              recordingFilename != lastApprovedRecordingFilename
+            "
+            class="input-container"
+          >
             <div>
               <form @submit.prevent="sendMessage" id="chat-form">
                 <textarea
@@ -160,10 +166,7 @@
               </button>
             </div>
           </div>
-          <div
-            class="playback"
-            v-else-if="lastApprovedRecordedAudioUrl != recordedAudioUrl"
-          >
+          <div class="playback" v-else>
             <img
               src="@/assets/icons8-checkmark-50.png"
               @click="approveRecorded"
@@ -308,7 +311,9 @@ export default {
       recordedAudioUrl: "",
       editMessageId: "",
       messageToEdit: "",
-      lastApprovedRecordedAudioUrl: "",
+      lastApprovedRecordingFilename: "placeholder",
+      recordingUploadUrl: "",
+      recordingFilename: "",
     };
   },
   methods: {
@@ -451,7 +456,21 @@ export default {
         this.recordingFile = new Blob(this.recordingData, {
           type: "audio/ogg; codecs=opus",
         });
-        this.recordedAudioUrl = window.URL.createObjectURL(this.recordingFile);
+        const requestOptions = {
+          method: "PUT",
+          headers: { "Content-Type": "application/ogg" },
+          body: this.recordingFile,
+        };
+        fetch(this.recordingUploadUrl, requestOptions)
+          .then(() => {
+            this.roomWebSocket.send(
+              JSON.stringify({
+                command: "fetch_download_url",
+                filename: this.recordingFilename,
+              })
+            );
+          })
+          .catch((error) => console.log(error));
       }
     },
     deleteRecorded: function () {
@@ -459,14 +478,16 @@ export default {
       this.recorder.stop();
       this.recordingFile = null;
       this.recordingData = [];
-    },
-    approveRecorded: function () {
-      this.lastApprovedRecordedAudioUrl = this.recordedAudioUrl;
       this.roomWebSocket.send(
         JSON.stringify({
           command: "fetch_upload_url",
         })
       );
+    },
+    approveRecorded: function () {
+      this.lastApprovedRecordingFilename = this.recordingFilename;
+      this.sendMessage(this.recordingFilename);
+      this.deleteRecorded();
     },
     connectWebSocket: function () {
       const backendUrl = new URL(process.env.VUE_APP_BACKEND_URL);
@@ -585,17 +606,10 @@ export default {
             })
           );
         } else if ("upload_url" in data) {
-          const requestOptions = {
-            method: "PUT",
-            headers: { "Content-Type": "application/ogg" },
-            body: this.recordingFile,
-          };
-          fetch(data.upload_url, requestOptions)
-            .then(() => {
-              this.sendMessage(data.filename);
-              this.deleteRecorded();
-            })
-            .catch((error) => console.log(error));
+          this.recordingUploadUrl = data.upload_url;
+          this.recordingFilename = data.filename;
+        } else if ("download_url" in data) {
+          this.recordedAudioUrl = data.download_url;
         }
       };
       this.roomWebSocket.onerror = (e) => {
