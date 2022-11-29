@@ -135,7 +135,7 @@
         <div class="record-playback" v-if="!isRecording">
           <div
             v-if="
-              recordingData.length == 0 &&
+              (!recordingFile || (recordingFile && recordingFile.size == 0)) &&
               recordingFilename != lastApprovedRecordingFilename
             "
             class="input-container"
@@ -168,7 +168,7 @@
           </div>
           <div
             class="playback"
-            v-else-if="recordingFilename != lastApprovedRecordingFilename"
+            v-else-if="recordingFile && recordingFile.size > 0"
           >
             <img
               src="@/assets/icons8-checkmark-50.png"
