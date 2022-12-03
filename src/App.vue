@@ -28,7 +28,7 @@
     />
   </div>
   <div v-else>
-    <ChatRoom :authToken="authToken" :room="room" :userId="userId" />
+    <ChatRoom :authToken="authToken" :room="room" :userId="userId" @go-home="goHome" />
   </div>
 </template>
 
@@ -76,6 +76,10 @@ export default {
       this.room = urlParams.get("room");
     },
     selectRoom: function () {
+      const urlParams = new URLSearchParams(window.location.search);
+      this.room = urlParams.get("room");
+    },
+    goHome: function () {
       const urlParams = new URLSearchParams(window.location.search);
       this.room = urlParams.get("room");
     },
