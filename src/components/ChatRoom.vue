@@ -168,9 +168,7 @@
           </div>
           <div
             class="playback"
-            v-else-if="
-              recordingFile && recordingFile.size > 0 && recordedAudioUrl
-            "
+            v-else-if="recordingFile && recordingFile.size > 0"
           >
             <img
               src="@/assets/icons8-checkmark-50.png"
