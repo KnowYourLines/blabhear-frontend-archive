@@ -308,6 +308,7 @@ export default {
       recordedAudioUrl: "",
       editMessageId: "",
       messageToEdit: "",
+      goHome: false,
       lastApprovedRecordedAudioUrl: "",
     };
   },
@@ -352,7 +353,10 @@ export default {
     },
     returnHome: function () {
       const url = new URL(window.location.href);
-      window.location.href = url.origin;
+      window.history.replaceState("", "", url.origin);
+      this.$emit("go-home");
+      this.goHome = true;
+      this.roomWebSocket.close();
     },
     returnHomeNewTab: function () {
       const url = new URL(window.location.href);
@@ -603,7 +607,9 @@ export default {
       };
       this.roomWebSocket.onclose = () => {
         console.log("Room WebSocket closed");
-        this.connectWebSocket();
+        if (!this.goHome) {
+          this.connectWebSocket();
+        }
       };
     },
   },

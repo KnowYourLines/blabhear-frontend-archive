@@ -186,6 +186,11 @@ export default {
       }
     },
   },
+  created() {
+    if (this.userId) {
+      this.connectWebsocket();
+    }
+  },
 };
 </script>
 
