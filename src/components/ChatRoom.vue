@@ -460,7 +460,6 @@ export default {
       if (this.recorder) {
         this.isRecording = false;
         this.recorder.pause();
-        this.recordedAudioUrl = "";
         this.recordingFile = new Blob(this.recordingData, {
           type: "audio/ogg; codecs=opus",
         });
