@@ -618,6 +618,9 @@ export default {
   },
   created() {
     this.shareable = typeof navigator.share === "function";
+    if (this.userId) {
+      this.connectWebSocket();
+    }
   },
 };
 </script>
