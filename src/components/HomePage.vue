@@ -88,22 +88,16 @@ export default {
       displayName: null,
       editDisplayName: false,
       editableDisplayName: null,
-      goToRoom: false,
     };
   },
   methods: {
     createNewRoom: function () {
       this.$emit("new-room");
-      this.goToRoom = true;
-      this.userWebSocket.close();
     },
     visitRoom: function (room) {
       const url = new URL(window.location.href);
       url.searchParams.set("room", room);
-      window.history.replaceState("", "", url);
-      this.$emit("visit-room");
-      this.goToRoom = true;
-      this.userWebSocket.close();
+      window.location.href = url;
     },
     visitRoomNewTab: function (room) {
       const url = new URL(window.location.href);
@@ -171,9 +165,7 @@ export default {
       };
       this.userWebSocket.onclose = () => {
         console.log("User WebSocket closed");
-        if (!this.goToRoom) {
-          this.connectWebsocket();
-        }
+        this.connectWebsocket();
       };
     },
   },

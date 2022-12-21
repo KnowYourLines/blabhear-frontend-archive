@@ -20,12 +20,7 @@
     <div v-else>
       <img src="@/assets/icons8-checked-user-52.png" />
     </div>
-    <HomePage
-      :authToken="authToken"
-      :userId="userId"
-      @new-room="newRoom"
-      @visit-room="selectRoom"
-    />
+    <HomePage :authToken="authToken" :userId="userId" @new-room="newRoom" />
   </div>
   <div v-else>
     <ChatRoom :authToken="authToken" :room="room" :userId="userId" />
@@ -71,13 +66,7 @@ export default {
       const room = uuidv4();
       const url = new URL(window.location.href.split("?")[0]);
       url.searchParams.set("room", room);
-      window.history.replaceState("", "", url);
-      const urlParams = new URLSearchParams(window.location.search);
-      this.room = urlParams.get("room");
-    },
-    selectRoom: function () {
-      const urlParams = new URLSearchParams(window.location.search);
-      this.room = urlParams.get("room");
+      window.location.href = url;
     },
   },
   mounted() {
