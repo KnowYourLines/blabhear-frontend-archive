@@ -149,7 +149,7 @@
             </div>
             <div v-if="messageToSend.length == 0">
               <img
-                src="@/assets/icons8-add-record-60.png"
+                src="@/assets/icons8-microphone-60.png"
                 @click="addRecording"
                 class="add-record"
               />
