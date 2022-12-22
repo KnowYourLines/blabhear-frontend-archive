@@ -12,9 +12,10 @@
     "core-js": "^3.8.3",
     "firebase": "^8.10.1",
     "firebaseui": "^5.0.0",
-    "loader-utils": "^1.4.1",
+    "loader-utils": "^1.4.2",
     "sass": "^1.54.5",
     "sass-loader": "^13.0.2",
+    "tone": "^14.7.77",
     "vue": "^3.2.13"
   },
   "devDependencies": {

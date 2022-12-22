@@ -264,6 +264,7 @@
 </template>
 
 <script>
+import * as Tone from "tone";
 import Toggle from "@vueform/toggle";
 export default {
   name: "ChatRoom",
@@ -456,6 +457,20 @@ export default {
           type: "audio/ogg; codecs=opus",
         });
         this.recordedAudioUrl = window.URL.createObjectURL(this.recordingFile);
+        const recorder = new Tone.Recorder();
+        const pitchShift = new Tone.PitchShift().connect(recorder);
+        pitchShift.pitch = 7; // up a fifth
+        const player = new Tone.Player(this.recordedAudioUrl)
+          .connect(pitchShift)
+        Tone.loaded().then(() => {
+          player.start();
+          recorder.start();
+        });
+        player.onstop = async () => {
+          const recording = await recorder.stop();
+          console.log(recording)
+          this.recordedAudioUrl = URL.createObjectURL(recording);
+        };
       }
     },
     deleteRecorded: function () {
