@@ -77,6 +77,7 @@
             <div class="bubble">
               <div class="message-audio" v-if="message.filename != 'None'">
                 <audio
+                  :ref="message.filename + '-player'"
                   controls
                   :src="message.download"
                   controlsList="nodownload nofullscreen noremoteplayback"
@@ -162,7 +163,10 @@
           </div>
           <div
             class="playback"
-            v-else-if="lastApprovedRecordedAudioUrl != recordedAudioUrl"
+            v-else-if="
+              lastApprovedRecordedAudioUrl != wetRecordedAudioUrl &&
+              wetRecordedAudioUrl
+            "
           >
             <img
               src="@/assets/icons8-checkmark-50.png"
@@ -176,7 +180,7 @@
             />
             <audio
               controls
-              :src="recordedAudioUrl"
+              :src="wetRecordedAudioUrl"
               controlsList="nodownload nofullscreen noremoteplayback"
             ></audio>
             <img
@@ -304,9 +308,11 @@ export default {
       audio: null,
       isRecording: false,
       recordingFile: null,
+      wetRecordingFile: null,
       recorder: null,
       recordingData: [],
       recordedAudioUrl: "",
+      wetRecordedAudioUrl: "",
       editMessageId: "",
       messageToEdit: "",
       goHome: false,
@@ -436,7 +442,13 @@ export default {
     },
     recordAudio: function () {
       this.isRecording = true;
-      this.isPlaying = false;
+      Object.keys(this.$refs).filter((ref) => {
+        if (ref.includes("player")) {
+          if (!ref.paused && this.$refs[ref] && this.$refs[ref][0]) {
+            this.$refs[ref][0].pause();
+          }
+        }
+      });
       if (!this.recorder || this.recorder.state == "inactive") {
         this.audio.then((stream) => {
           this.recorder = new MediaRecorder(stream);
@@ -460,16 +472,18 @@ export default {
         const recorder = new Tone.Recorder();
         const pitchShift = new Tone.PitchShift().connect(recorder);
         pitchShift.pitch = 7; // up a fifth
-        const player = new Tone.Player(this.recordedAudioUrl)
-          .connect(pitchShift)
+        const player = new Tone.Player(this.recordedAudioUrl).connect(
+          pitchShift
+        );
+        this.wetRecordedAudioUrl = "";
         Tone.loaded().then(() => {
           player.start();
           recorder.start();
         });
         player.onstop = async () => {
-          const recording = await recorder.stop();
-          console.log(recording)
-          this.recordedAudioUrl = URL.createObjectURL(recording);
+          const wetRecording = await recorder.stop();
+          this.wetRecordingFile = wetRecording;
+          this.wetRecordedAudioUrl = URL.createObjectURL(this.wetRecordingFile);
         };
       }
     },
@@ -480,7 +494,7 @@ export default {
       this.recordingData = [];
     },
     approveRecorded: function () {
-      this.lastApprovedRecordedAudioUrl = this.recordedAudioUrl;
+      this.lastApprovedRecordedAudioUrl = this.wetRecordedAudioUrl;
       this.roomWebSocket.send(
         JSON.stringify({
           command: "fetch_upload_url",
