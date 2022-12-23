@@ -449,6 +449,13 @@ export default {
           }
         }
       });
+      this.mic = new Tone.UserMedia();
+      this.wetRecorder = new Tone.Recorder();
+      const pitchShift = new Tone.PitchShift().connect(this.wetRecorder);
+      pitchShift.pitch = 7; // up a fifth
+      this.mic.connect(pitchShift);
+      this.mic.open();
+      this.wetRecorder.start();
       if (!this.recorder || this.recorder.state == "inactive") {
         this.audio.then((stream) => {
           this.recorder = new MediaRecorder(stream);
@@ -469,22 +476,27 @@ export default {
           type: "audio/ogg; codecs=opus",
         });
         this.recordedAudioUrl = window.URL.createObjectURL(this.recordingFile);
-        const recorder = new Tone.Recorder();
-        const pitchShift = new Tone.PitchShift().connect(recorder);
-        pitchShift.pitch = 7; // up a fifth
-        const player = new Tone.Player(this.recordedAudioUrl).connect(
-          pitchShift
-        );
-        this.wetRecordedAudioUrl = "";
-        Tone.loaded().then(() => {
-          player.start();
-          recorder.start();
-        });
-        player.onstop = async () => {
-          const wetRecording = await recorder.stop();
-          this.wetRecordingFile = wetRecording;
+        this.wetRecorder.stop().then((recordingBlob) => {
+          this.wetRecordingFile = recordingBlob;
           this.wetRecordedAudioUrl = URL.createObjectURL(this.wetRecordingFile);
-        };
+        });
+
+        // const recorder = new Tone.Recorder();
+        // const pitchShift = new Tone.PitchShift().connect(recorder);
+        // pitchShift.pitch = 7; // up a fifth
+        // const player = new Tone.Player(this.recordedAudioUrl).connect(
+        //   pitchShift
+        // );
+        // this.wetRecordedAudioUrl = "";
+        // Tone.loaded().then(() => {
+        //   player.start();
+        //   recorder.start();
+        // });
+        // player.onstop = async () => {
+        //   const wetRecording = await recorder.stop();
+        //   this.wetRecordingFile = wetRecording;
+        //   this.wetRecordedAudioUrl = URL.createObjectURL(this.wetRecordingFile);
+        // };
       }
     },
     deleteRecorded: function () {
