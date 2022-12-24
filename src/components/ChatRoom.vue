@@ -269,6 +269,7 @@
 
 <script>
 import * as Tone from "tone";
+import { bufferToWav } from "./bufferToWav";
 import Toggle from "@vueform/toggle";
 export default {
   name: "ChatRoom",
@@ -441,7 +442,6 @@ export default {
       }
     },
     recordAudio: function () {
-      this.isRecording = true;
       Object.keys(this.$refs).filter((ref) => {
         if (ref.includes("player")) {
           if (!ref.paused && this.$refs[ref] && this.$refs[ref][0]) {
@@ -452,6 +452,9 @@ export default {
       if (!this.recorder || this.recorder.state == "inactive") {
         this.audio.then((stream) => {
           this.recorder = new MediaRecorder(stream);
+          this.recorder.onstart = () => {
+            this.isRecording = true;
+          };
           this.recorder.ondataavailable = (event) => {
             this.recordingData.push(event.data);
           };
@@ -468,23 +471,28 @@ export default {
         this.recordingFile = new Blob(this.recordingData, {
           type: "audio/ogg; codecs=opus",
         });
+        if (this.recordedAudioUrl) {
+          window.URL.revokeObjectURL(this.recordedAudioUrl);
+        }
         this.recordedAudioUrl = window.URL.createObjectURL(this.recordingFile);
-        const recorder = new Tone.Recorder();
-        const pitchShift = new Tone.PitchShift().connect(recorder);
-        pitchShift.pitch = 7; // up a fifth
-        const player = new Tone.Player(this.recordedAudioUrl).connect(
-          pitchShift
-        );
-        this.wetRecordedAudioUrl = "";
-        Tone.loaded().then(() => {
-          player.start();
-          recorder.start();
+        new Tone.Buffer(this.recordedAudioUrl, (toneAudioBuffer) => {
+          Tone.Offline((context) => {
+            const pitchShift = new Tone.PitchShift();
+            pitchShift.pitch = 7; // up a fifth
+            const sample = new Tone.Player();
+            sample.buffer = toneAudioBuffer;
+            sample.chain(pitchShift, context.destination);
+            sample.start(0, 0);
+          }, toneAudioBuffer.duration).then((buffer) => {
+            this.wetRecordingFile = bufferToWav(buffer, buffer.length);
+            if (this.wetRecordedAudioUrl) {
+              window.URL.revokeObjectURL(this.wetRecordedAudioUrl);
+            }
+            this.wetRecordedAudioUrl = window.URL.createObjectURL(
+              this.wetRecordingFile
+            );
+          });
         });
-        player.onstop = async () => {
-          const wetRecording = await recorder.stop();
-          this.wetRecordingFile = wetRecording;
-          this.wetRecordedAudioUrl = URL.createObjectURL(this.wetRecordingFile);
-        };
       }
     },
     deleteRecorded: function () {
@@ -621,7 +629,7 @@ export default {
           const requestOptions = {
             method: "PUT",
             headers: { "Content-Type": "application/ogg" },
-            body: this.recordingFile,
+            body: this.wetRecordingFile,
           };
           fetch(data.upload_url, requestOptions)
             .then(() => {
