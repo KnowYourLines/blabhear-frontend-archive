@@ -421,11 +421,12 @@ export default {
         })
       );
     },
-    sendMessage: function (filename) {
+    sendMessage: function (dryFilename, wetFilename) {
       this.roomWebSocket.send(
         JSON.stringify({
           message: this.messageToSend,
-          filename: filename,
+          dry_filename: dryFilename,
+          wet_filename: wetFilename,
           command: "send_message",
         })
       );
@@ -455,6 +456,12 @@ export default {
           this.recorder.onstart = () => {
             this.isRecording = true;
           };
+          this.recorder.onresume = () => {
+            this.isRecording = true;
+          };
+          this.recorder.onpause = () => {
+            this.isRecording = false;
+          };
           this.recorder.ondataavailable = (event) => {
             this.recordingData.push(event.data);
           };
@@ -466,7 +473,6 @@ export default {
     },
     pauseRecording: function () {
       if (this.recorder) {
-        this.isRecording = false;
         this.recorder.pause();
         this.recordingFile = new Blob(this.recordingData, {
           type: "audio/ogg; codecs=opus",
@@ -625,16 +631,25 @@ export default {
               command: "read_room_notification",
             })
           );
-        } else if ("upload_url" in data) {
-          const requestOptions = {
+        } else if (data.type == "upload_url") {
+          const dryRequestOptions = {
             method: "PUT",
             headers: { "Content-Type": "application/ogg" },
-            body: this.wetRecordingFile,
+            body: this.recordingFile,
           };
-          fetch(data.upload_url, requestOptions)
+          fetch(data.dry_upload_url, dryRequestOptions)
             .then(() => {
-              this.sendMessage(data.filename);
-              this.deleteRecorded();
+              const wetRequestOptions = {
+                method: "PUT",
+                headers: { "Content-Type": "application/ogg" },
+                body: this.wetRecordingFile,
+              };
+              fetch(data.wet_upload_url, wetRequestOptions)
+                .then(() => {
+                  this.sendMessage(data.dry_filename, data.wet_filename);
+                  this.deleteRecorded();
+                })
+                .catch((error) => console.log(error));
             })
             .catch((error) => console.log(error));
         }
