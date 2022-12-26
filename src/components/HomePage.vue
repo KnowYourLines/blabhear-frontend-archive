@@ -129,7 +129,7 @@ export default {
       this.editDisplayName = false;
       this.userWebSocket.send(
         JSON.stringify({
-          command: "update_display_name",
+          command: "update_user_display_name",
           name: this.editableDisplayName,
         })
       );
@@ -161,9 +161,9 @@ export default {
               command: "fetch_notifications",
             })
           );
-        } else if ("display_name" in data) {
-          this.displayName = data.display_name;
-          this.editableDisplayName = data.display_name;
+        } else if ("user_display_name" in data) {
+          this.displayName = data.user_display_name;
+          this.editableDisplayName = data.user_display_name;
         }
       };
       this.userWebSocket.onerror = (e) => {
