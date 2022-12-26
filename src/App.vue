@@ -23,12 +23,20 @@
     <HomePage
       :authToken="authToken"
       :userId="userId"
+      :displayName="displayName"
+      :notifications="notifications"
+      :userWebSocket="userWebSocket"
       @new-room="newRoom"
       @visit-room="selectRoom"
     />
   </div>
   <div v-else>
-    <ChatRoom :authToken="authToken" :room="room" :userId="userId" @go-home="goHome" />
+    <ChatRoom
+      :authToken="authToken"
+      :room="room"
+      :userId="userId"
+      @go-home="goHome"
+    />
   </div>
 </template>
 
@@ -53,6 +61,9 @@ export default {
       room: null,
       isAnonymous: true,
       verifyPhone: false,
+      notifications: [],
+      displayName: "",
+      userWebSocket: null,
     };
   },
   methods: {
@@ -82,6 +93,55 @@ export default {
     goHome: function () {
       const urlParams = new URLSearchParams(window.location.search);
       this.room = urlParams.get("room");
+    },
+    connectWebsocket: function () {
+      const backendUrl = new URL(process.env.VUE_APP_BACKEND_URL);
+      const ws_scheme = backendUrl.protocol == "https:" ? "wss" : "ws";
+      const path =
+        ws_scheme +
+        "://" +
+        backendUrl.hostname +
+        ":" +
+        backendUrl.port +
+        "/ws/user/" +
+        this.userId +
+        "/?token=" +
+        this.authToken;
+      this.userWebSocket = new WebSocket(path);
+      this.userWebSocket.onopen = () => {
+        console.log("User WebSocket open");
+      };
+      this.userWebSocket.onmessage = (message) => {
+        const data = JSON.parse(message.data);
+        if ("notifications" in data) {
+          this.notifications = data.notifications;
+        } else if (data.type == "refresh_notifications") {
+          this.userWebSocket.send(
+            JSON.stringify({
+              command: "fetch_notifications",
+            })
+          );
+        } else if ("display_name" in data) {
+          this.displayName = data.display_name;
+          this.editableDisplayName = data.display_name;
+        }
+      };
+      this.userWebSocket.onerror = (e) => {
+        console.log(e.message);
+      };
+      this.userWebSocket.onclose = () => {
+        console.log("User WebSocket closed");
+        this.connectWebsocket();
+      };
+    },
+  },
+  watch: {
+    userId() {
+      if (this.userWebSocket) {
+        this.userWebSocket.close();
+      } else {
+        this.connectWebsocket();
+      }
     },
   },
   mounted() {
