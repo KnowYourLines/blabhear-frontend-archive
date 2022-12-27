@@ -82,7 +82,7 @@ export default {
     },
     userWebSocket: {
       type: WebSocket,
-      required: true,
+      required: false,
     },
     notifications: {
       type: Array,
