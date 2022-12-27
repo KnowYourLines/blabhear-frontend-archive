@@ -289,22 +289,54 @@ export default {
       type: String,
       required: true,
     },
+    roomWebSocket: {
+      type: WebSocket,
+      required: false,
+    },
+    roomMembers: {
+      type: Array,
+      required: true,
+    },
+    privacy: {
+      type: Boolean,
+      required: true,
+    },
+    userAllowed: {
+      type: Boolean,
+      required: true,
+    },
+    joinRequests: {
+      type: Array,
+      required: true,
+    },
+    leftRoom: {
+      type: Boolean,
+      required: true,
+    },
+    displayName: {
+      type: String,
+      required: true,
+    },
+    messages: {
+      type: Array,
+      required: true,
+    },
+    page: {
+      type: Number,
+      required: true,
+    },
+    uploadDestination: {
+      type: Object,
+      required: true,
+    },
   },
   data() {
     return {
-      roomWebSocket: null,
-      roomMembers: [],
-      privateRoom: false,
-      userAllowed: true,
-      joinRequests: [],
       shareable: null,
-      leftRoom: false,
-      displayName: null,
+      privateRoom: false,
       editDisplayName: false,
       editableDisplayName: null,
-      messages: [],
       messageToSend: "",
-      page: 0,
       showMembers: false,
       audio: null,
       isRecording: false,
@@ -316,7 +348,6 @@ export default {
       wetRecordedAudioUrl: "",
       editMessageId: "",
       messageToEdit: "",
-      goHome: false,
       lastApprovedRecordedAudioUrl: "",
     };
   },
@@ -363,8 +394,11 @@ export default {
       const url = new URL(window.location.href);
       window.history.replaceState("", "", url.origin);
       this.$emit("go-home");
-      this.goHome = true;
-      this.roomWebSocket.close();
+      this.roomWebSocket.send(
+        JSON.stringify({
+          command: "disconnect",
+        })
+      );
     },
     returnHomeNewTab: function () {
       const url = new URL(window.location.href);
@@ -404,6 +438,7 @@ export default {
     },
     edit: function () {
       this.editDisplayName = true;
+      this.editableDisplayName = this.displayName;
       this.$nextTick(() => {
         this.$refs.editName.select();
       });
@@ -515,170 +550,72 @@ export default {
         })
       );
     },
-    connectWebSocket: function () {
-      const backendUrl = new URL(process.env.VUE_APP_BACKEND_URL);
-      const ws_scheme = backendUrl.protocol == "https:" ? "wss" : "ws";
-      const path =
-        ws_scheme +
-        "://" +
-        backendUrl.hostname +
-        ":" +
-        backendUrl.port +
-        "/ws/room/" +
-        this.room +
-        "/?token=" +
-        this.authToken;
-      this.roomWebSocket = new WebSocket(path);
-      this.roomWebSocket.onopen = () => {
-        console.log("Room WebSocket open");
-      };
-      this.roomWebSocket.onmessage = (message) => {
-        const data = JSON.parse(message.data);
-        if ("members" in data) {
-          this.roomMembers = data.members;
-        } else if (data.type == "refresh_members") {
-          this.roomWebSocket.send(
-            JSON.stringify({
-              command: "fetch_members",
-            })
-          );
-        } else if ("privacy" in data) {
-          this.privateRoom = data.privacy;
-        } else if (data.type == "refresh_privacy") {
-          this.roomWebSocket.send(JSON.stringify({ command: "fetch_privacy" }));
-        } else if ("allowed" in data) {
-          this.userAllowed = data.allowed;
-        } else if (data.type == "refresh_allowed_status") {
-          this.roomWebSocket.send(
-            JSON.stringify({ command: "fetch_allowed_status" })
-          );
-        } else if ("join_requests" in data) {
-          this.joinRequests = data.join_requests;
-        } else if (data.type == "refresh_join_requests") {
-          this.roomWebSocket.send(
-            JSON.stringify({
-              command: "fetch_join_requests",
-            })
-          );
-        } else if (data.type == "left_room") {
-          this.leftRoom = true;
-        } else if ("display_name" in data) {
-          this.displayName = data.display_name;
-          this.editableDisplayName = data.display_name;
-        } else if ("new_message" in data) {
-          const newMessage = data.new_message;
-          const messageContainer = this.$refs.messages;
-          const wasAtBottom =
-            messageContainer.getBoundingClientRect().bottom <=
-              messageContainer.scrollTop + messageContainer.clientHeight &&
-            messageContainer.scrollHeight ==
-              Math.round(
-                messageContainer.scrollTop + messageContainer.clientHeight
-              );
-          this.messages.push(newMessage);
-          if (newMessage.creator__username == this.userId || wasAtBottom) {
-            this.$nextTick(() => {
-              const messageContainer = this.$refs.messages;
-              messageContainer.scrollTop = messageContainer.scrollHeight;
-            });
-          }
-        } else if ("messages" in data) {
-          if (data.page > this.page) {
-            this.messages.unshift(...data.messages);
-            this.page = data.page;
-            const oldScrollHeight = this.$refs.messages.scrollHeight;
-            this.$nextTick(() => {
-              this.$refs.messages.scrollTop =
-                this.$refs.messages.scrollHeight - oldScrollHeight;
-            });
-            if (data.refresh_messages_in) {
-              clearTimeout();
-              setTimeout(() => {
-                const maxPage = Math.max(
-                  Math.ceil(this.messages.length / 10),
-                  1
-                );
-                this.messages = [];
-                this.page = 0;
-                this.roomWebSocket.send(
-                  JSON.stringify({
-                    page: maxPage,
-                    command: "fetch_messages_up_to_page",
-                  })
-                );
-              }, data.refresh_messages_in);
-            }
-          }
-        } else if (data.type == "refresh_messages") {
-          const maxPage = Math.max(Math.ceil(this.messages.length / 10), 1);
-          this.messages = [];
-          this.page = 0;
-          this.roomWebSocket.send(
-            JSON.stringify({
-              page: maxPage,
-              command: "fetch_messages_up_to_page",
-            })
-          );
-        } else if (data.type == "refresh_display_name") {
-          this.roomWebSocket.send(
-            JSON.stringify({
-              command: "fetch_display_name",
-            })
-          );
-        } else if (data.type == "room_notified") {
-          this.roomWebSocket.send(
-            JSON.stringify({
-              command: "read_room_notification",
-            })
-          );
-        } else if (data.type == "upload_url") {
-          const dryRequestOptions = {
-            method: "PUT",
-            headers: { "Content-Type": "application/ogg" },
-            body: this.recordingFile,
-          };
-          fetch(data.dry_upload_url, dryRequestOptions)
-            .then(() => {
-              const wetRequestOptions = {
-                method: "PUT",
-                headers: { "Content-Type": "application/ogg" },
-                body: this.wetRecordingFile,
-              };
-              fetch(data.wet_upload_url, wetRequestOptions)
-                .then(() => {
-                  this.sendMessage(data.dry_filename, data.wet_filename);
-                  this.deleteRecorded();
-                })
-                .catch((error) => console.log(error));
-            })
-            .catch((error) => console.log(error));
-        }
-      };
-      this.roomWebSocket.onerror = (e) => {
-        console.log(e.message);
-      };
-      this.roomWebSocket.onclose = () => {
-        console.log("Room WebSocket closed");
-        if (!this.goHome) {
-          this.connectWebSocket();
-        }
-      };
+  },
+  computed: {
+    roomMessages() {
+      return this.messages.slice();
     },
   },
   watch: {
-    userId() {
-      if (this.roomWebSocket) {
-        this.roomWebSocket.close();
-      } else {
-        this.connectWebSocket();
+    privacy(newPrivacy) {
+      this.privateRoom = newPrivacy;
+    },
+    roomMessages(newMessages, oldMessages) {
+      if (
+        newMessages.at(-1) != oldMessages.at(-1) &&
+        newMessages.length == oldMessages.length + 1
+      ) {
+        const messageContainer = this.$refs.messages;
+        const wasAtBottom =
+          messageContainer.getBoundingClientRect().bottom <=
+            messageContainer.scrollTop + messageContainer.clientHeight &&
+          messageContainer.scrollHeight ==
+            Math.round(
+              messageContainer.scrollTop + messageContainer.clientHeight
+            );
+        const newMessage = this.messages.at(-1);
+        if (newMessage.creator__username == this.userId || wasAtBottom) {
+          this.$nextTick(() => {
+            const messageContainer = this.$refs.messages;
+            messageContainer.scrollTop = messageContainer.scrollHeight;
+          });
+        }
+      } else if (newMessages.length > oldMessages.length) {
+        const oldScrollHeight = this.$refs.messages.scrollHeight;
+        this.$nextTick(() => {
+          this.$refs.messages.scrollTop =
+            this.$refs.messages.scrollHeight - oldScrollHeight;
+        });
       }
+    },
+    uploadDestination(newUploadDestination) {
+      const dryRequestOptions = {
+        method: "PUT",
+        headers: { "Content-Type": "application/ogg" },
+        body: this.recordingFile,
+      };
+      fetch(newUploadDestination.dryUploadUrl, dryRequestOptions)
+        .then(() => {
+          const wetRequestOptions = {
+            method: "PUT",
+            headers: { "Content-Type": "application/ogg" },
+            body: this.wetRecordingFile,
+          };
+          fetch(newUploadDestination.wetUploadUrl, wetRequestOptions)
+            .then(() => {
+              this.sendMessage(
+                newUploadDestination.dryFilename,
+                newUploadDestination.wetFilename
+              );
+              this.deleteRecorded();
+            })
+            .catch((error) => console.log(error));
+        })
+        .catch((error) => console.log(error));
     },
   },
   created() {
     this.shareable = typeof navigator.share === "function";
-    if (this.userId) {
-      this.connectWebSocket();
-    }
   },
 };
 </script>

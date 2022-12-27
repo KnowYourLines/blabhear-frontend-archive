@@ -32,6 +32,16 @@
   </div>
   <div v-else>
     <ChatRoom
+      :roomWebSocket="roomWebSocket"
+      :roomMembers="roomMembers"
+      :privacy="privateRoom"
+      :userAllowed="userAllowed"
+      :joinRequests="joinRequests"
+      :leftRoom="leftRoom"
+      :displayName="roomDisplayName"
+      :messages="messages"
+      :page="page"
+      :uploadDestination="uploadDestination"
       :authToken="authToken"
       :room="room"
       :userId="userId"
@@ -64,6 +74,16 @@ export default {
       notifications: [],
       displayName: "",
       userWebSocket: null,
+      roomWebSocket: null,
+      roomMembers: [],
+      privateRoom: false,
+      userAllowed: true,
+      joinRequests: [],
+      leftRoom: false,
+      roomDisplayName: "",
+      messages: [],
+      page: 0,
+      uploadDestination: {},
     };
   },
   methods: {
@@ -94,7 +114,7 @@ export default {
       const urlParams = new URLSearchParams(window.location.search);
       this.room = urlParams.get("room");
     },
-    connectWebsocket: function () {
+    connectUserWebsocket: function () {
       const backendUrl = new URL(process.env.VUE_APP_BACKEND_URL);
       const ws_scheme = backendUrl.protocol == "https:" ? "wss" : "ws";
       const path =
@@ -131,7 +151,119 @@ export default {
       };
       this.userWebSocket.onclose = () => {
         console.log("User WebSocket closed");
-        this.connectWebsocket();
+        this.connectUserWebsocket();
+      };
+    },
+    connectRoomWebSocket: function () {
+      const backendUrl = new URL(process.env.VUE_APP_BACKEND_URL);
+      const ws_scheme = backendUrl.protocol == "https:" ? "wss" : "ws";
+      const path =
+        ws_scheme +
+        "://" +
+        backendUrl.hostname +
+        ":" +
+        backendUrl.port +
+        "/ws/room/" +
+        this.room +
+        "/?token=" +
+        this.authToken;
+      this.roomWebSocket = new WebSocket(path);
+      this.roomWebSocket.onopen = () => {
+        console.log("Room WebSocket open");
+      };
+      this.roomWebSocket.onmessage = (message) => {
+        const data = JSON.parse(message.data);
+        if ("members" in data) {
+          this.roomMembers = data.members;
+        } else if (data.type == "refresh_members") {
+          this.roomWebSocket.send(
+            JSON.stringify({
+              command: "fetch_members",
+            })
+          );
+        } else if ("privacy" in data) {
+          this.privateRoom = data.privacy;
+        } else if (data.type == "refresh_privacy") {
+          this.roomWebSocket.send(JSON.stringify({ command: "fetch_privacy" }));
+        } else if ("allowed" in data) {
+          this.userAllowed = data.allowed;
+        } else if (data.type == "refresh_allowed_status") {
+          this.roomWebSocket.send(
+            JSON.stringify({ command: "fetch_allowed_status" })
+          );
+        } else if ("join_requests" in data) {
+          this.joinRequests = data.join_requests;
+        } else if (data.type == "refresh_join_requests") {
+          this.roomWebSocket.send(
+            JSON.stringify({
+              command: "fetch_join_requests",
+            })
+          );
+        } else if (data.type == "left_room") {
+          this.leftRoom = true;
+        } else if ("display_name" in data) {
+          this.roomDisplayName = data.display_name;
+        } else if ("new_message" in data) {
+          this.messages.push(data.new_message);
+        } else if ("messages" in data) {
+          if (data.page > this.page) {
+            this.messages.unshift(...data.messages);
+            this.page = data.page;
+            if (data.refresh_messages_in) {
+              clearTimeout();
+              setTimeout(() => {
+                const maxPage = Math.max(
+                  Math.ceil(this.messages.length / 10),
+                  1
+                );
+                this.messages = [];
+                this.page = 0;
+                this.roomWebSocket.send(
+                  JSON.stringify({
+                    page: maxPage,
+                    command: "fetch_messages_up_to_page",
+                  })
+                );
+              }, data.refresh_messages_in);
+            }
+          }
+        } else if (data.type == "refresh_messages") {
+          const maxPage = Math.max(Math.ceil(this.messages.length / 10), 1);
+          this.messages = [];
+          this.page = 0;
+          this.roomWebSocket.send(
+            JSON.stringify({
+              page: maxPage,
+              command: "fetch_messages_up_to_page",
+            })
+          );
+        } else if (data.type == "refresh_display_name") {
+          this.roomWebSocket.send(
+            JSON.stringify({
+              command: "fetch_display_name",
+            })
+          );
+        } else if (data.type == "room_notified") {
+          this.roomWebSocket.send(
+            JSON.stringify({
+              command: "read_room_notification",
+            })
+          );
+        } else if (data.type == "upload_url") {
+          this.uploadDestination = {
+            dryUploadUrl: data.dry_upload_url,
+            wetUploadUrl: data.wet_upload_url,
+            dryFilename: data.dry_filename,
+            wetFilename: data.wet_filename,
+          };
+        }
+      };
+      this.roomWebSocket.onerror = (e) => {
+        console.log(e.message);
+      };
+      this.roomWebSocket.onclose = () => {
+        console.log("Room WebSocket closed");
+        this.connectRoomWebSocket();
       };
     },
   },
@@ -140,7 +272,25 @@ export default {
       if (this.userWebSocket) {
         this.userWebSocket.close();
       } else {
-        this.connectWebsocket();
+        this.connectUserWebsocket();
+      }
+      if (this.roomWebSocket) {
+        this.roomWebSocket.close();
+      } else if (this.room) {
+        this.connectRoomWebSocket();
+      }
+    },
+    room(newRoom, oldRoom) {
+      if (this.userId && newRoom && !oldRoom && this.roomWebSocket) {
+        console.log("hello world");
+        this.roomWebSocket.send(
+          JSON.stringify({
+            command: "connect",
+            room: this.room,
+          })
+        );
+      } else if (this.userId && newRoom && !oldRoom && !this.roomWebSocket) {
+        this.connectRoomWebSocket();
       }
     },
   },
