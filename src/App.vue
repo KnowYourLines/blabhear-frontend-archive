@@ -170,12 +170,14 @@ export default {
       this.roomWebSocket = new WebSocket(path);
       this.roomWebSocket.onopen = () => {
         console.log("Room WebSocket open");
-        this.roomWebSocket.send(
-          JSON.stringify({
-            command: "connect",
-            room: this.room,
-          })
-        );
+        if (this.room) {
+          this.roomWebSocket.send(
+            JSON.stringify({
+              command: "connect",
+              room: this.room,
+            })
+          );
+        }
       };
       this.roomWebSocket.onmessage = (message) => {
         const data = JSON.parse(message.data);
