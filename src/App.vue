@@ -35,7 +35,7 @@
       :roomWebSocket="roomWebSocket"
       :roomMembers="roomMembers"
       :privacy="privateRoom"
-      :userAllowed="userAllowed"
+      :userNotAllowedInRoom="userNotAllowedInRoom"
       :joinRequests="joinRequests"
       :leftRoom="leftRoom"
       :displayName="roomDisplayName"
@@ -77,7 +77,7 @@ export default {
       roomWebSocket: null,
       roomMembers: [],
       privateRoom: false,
-      userAllowed: true,
+      userNotAllowedInRoom: "",
       joinRequests: [],
       leftRoom: "",
       roomDisplayName: "",
@@ -188,7 +188,11 @@ export default {
         } else if (data.type == "refresh_privacy") {
           this.roomWebSocket.send(JSON.stringify({ command: "fetch_privacy" }));
         } else if ("allowed" in data) {
-          this.userAllowed = data.allowed;
+          if (!data.allowed) {
+            this.userNotAllowedInRoom = data.room;
+          } else {
+            this.userNotAllowedInRoom = "";
+          }
         } else if (data.type == "refresh_allowed_status") {
           this.roomWebSocket.send(
             JSON.stringify({ command: "fetch_allowed_status" })

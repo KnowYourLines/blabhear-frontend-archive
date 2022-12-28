@@ -13,7 +13,7 @@
     /><br /><br />
     You left the room. Refresh to rejoin.
   </div>
-  <div v-else-if="userAllowed">
+  <div v-else-if="userNotAllowedInRoom != room">
     <div class="column">
       <div>
         <img
@@ -301,8 +301,8 @@ export default {
       type: Boolean,
       required: true,
     },
-    userAllowed: {
-      type: Boolean,
+    userNotAllowedInRoom: {
+      type: String,
       required: true,
     },
     joinRequests: {
@@ -394,6 +394,11 @@ export default {
       const url = new URL(window.location.href);
       window.history.replaceState("", "", url.origin);
       this.$emit("go-home");
+      this.roomWebSocket.send(
+        JSON.stringify({
+          command: "disconnect",
+        })
+      );
     },
     returnHomeNewTab: function () {
       const url = new URL(window.location.href);
