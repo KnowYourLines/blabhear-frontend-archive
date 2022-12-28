@@ -165,13 +165,17 @@ export default {
         backendUrl.hostname +
         ":" +
         backendUrl.port +
-        "/ws/room/" +
-        this.room +
-        "/?token=" +
+        "/ws/room/?token=" +
         this.authToken;
       this.roomWebSocket = new WebSocket(path);
       this.roomWebSocket.onopen = () => {
         console.log("Room WebSocket open");
+        this.roomWebSocket.send(
+          JSON.stringify({
+            command: "connect",
+            room: this.room,
+          })
+        );
       };
       this.roomWebSocket.onmessage = (message) => {
         const data = JSON.parse(message.data);
