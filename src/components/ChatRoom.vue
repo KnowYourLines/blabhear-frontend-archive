@@ -1,5 +1,5 @@
 <template>
-  <div class="column" v-if="leftRoom">
+  <div class="column" v-if="leftRoom == room">
     <img
       src="@/assets/icons8-home-48.png"
       @click="returnHome"
@@ -310,7 +310,7 @@ export default {
       required: true,
     },
     leftRoom: {
-      type: Boolean,
+      type: String,
       required: true,
     },
     displayName: {

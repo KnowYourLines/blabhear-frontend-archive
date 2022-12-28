@@ -79,7 +79,7 @@ export default {
       privateRoom: false,
       userAllowed: true,
       joinRequests: [],
-      leftRoom: false,
+      leftRoom: "",
       roomDisplayName: "",
       messages: [],
       page: 0,
@@ -105,10 +105,12 @@ export default {
       window.history.replaceState("", "", url);
       const urlParams = new URLSearchParams(window.location.search);
       this.room = urlParams.get("room");
+      this.messages = [];
     },
     selectRoom: function () {
       const urlParams = new URLSearchParams(window.location.search);
       this.room = urlParams.get("room");
+      this.messages = [];
     },
     goHome: function () {
       const urlParams = new URLSearchParams(window.location.search);
@@ -200,7 +202,7 @@ export default {
             })
           );
         } else if (data.type == "left_room") {
-          this.leftRoom = true;
+          this.leftRoom = data.room;
         } else if ("display_name" in data) {
           this.roomDisplayName = data.display_name;
         } else if ("new_message" in data) {
