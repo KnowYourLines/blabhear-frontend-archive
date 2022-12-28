@@ -616,6 +616,7 @@ export default {
   },
   created() {
     this.shareable = typeof navigator.share === "function";
+    this.privateRoom = this.privacy;
   },
 };
 </script>
