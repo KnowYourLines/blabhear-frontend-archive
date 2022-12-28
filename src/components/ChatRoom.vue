@@ -394,11 +394,6 @@ export default {
       const url = new URL(window.location.href);
       window.history.replaceState("", "", url.origin);
       this.$emit("go-home");
-      this.roomWebSocket.send(
-        JSON.stringify({
-          command: "disconnect",
-        })
-      );
     },
     returnHomeNewTab: function () {
       const url = new URL(window.location.href);

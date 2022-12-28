@@ -209,23 +209,23 @@ export default {
           if (data.page > this.page) {
             this.messages.unshift(...data.messages);
             this.page = data.page;
-            if (data.refresh_messages_in) {
-              clearTimeout();
-              setTimeout(() => {
-                const maxPage = Math.max(
-                  Math.ceil(this.messages.length / 10),
-                  1
-                );
-                this.messages = [];
-                this.page = 0;
-                this.roomWebSocket.send(
-                  JSON.stringify({
-                    page: maxPage,
-                    command: "fetch_messages_up_to_page",
-                  })
-                );
-              }, data.refresh_messages_in);
-            }
+          } else {
+            this.messages = data.messages;
+            this.page = data.page;
+          }
+          if (data.refresh_messages_in) {
+            clearTimeout();
+            setTimeout(() => {
+              const maxPage = Math.max(Math.ceil(this.messages.length / 10), 1);
+              this.messages = [];
+              this.page = 0;
+              this.roomWebSocket.send(
+                JSON.stringify({
+                  page: maxPage,
+                  command: "fetch_messages_up_to_page",
+                })
+              );
+            }, data.refresh_messages_in);
           }
         } else if (data.type == "refresh_messages") {
           const maxPage = Math.max(Math.ceil(this.messages.length / 10), 1);
@@ -282,7 +282,6 @@ export default {
     },
     room(newRoom, oldRoom) {
       if (this.userId && newRoom && !oldRoom && this.roomWebSocket) {
-        console.log("hello world");
         this.roomWebSocket.send(
           JSON.stringify({
             command: "connect",
