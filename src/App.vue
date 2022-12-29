@@ -106,11 +106,13 @@ export default {
       const urlParams = new URLSearchParams(window.location.search);
       this.room = urlParams.get("room");
       this.messages = [];
+      this.roomDisplayName = "";
     },
     selectRoom: function () {
       const urlParams = new URLSearchParams(window.location.search);
       this.room = urlParams.get("room");
       this.messages = [];
+      this.roomDisplayName = "";
     },
     goHome: function () {
       const urlParams = new URLSearchParams(window.location.search);
@@ -288,7 +290,7 @@ export default {
       }
       if (this.roomWebSocket) {
         this.roomWebSocket.close();
-      } else if (this.room) {
+      } else {
         this.connectRoomWebSocket();
       }
     },

@@ -468,7 +468,7 @@ export default {
       this.messageToSend = "";
     },
     onScroll({ target: { scrollTop } }) {
-      if (scrollTop == 0) {
+      if (scrollTop == 0 && this.page > 0) {
         this.roomWebSocket.send(
           JSON.stringify({
             page: this.page + 1,
