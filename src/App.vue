@@ -290,7 +290,7 @@ export default {
       }
       if (this.roomWebSocket) {
         this.roomWebSocket.close();
-      } else {
+      } else if (this.room) {
         this.connectRoomWebSocket();
       }
     },
