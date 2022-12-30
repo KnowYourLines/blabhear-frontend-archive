@@ -596,14 +596,14 @@ export default {
     uploadDestination(newUploadDestination) {
       const dryRequestOptions = {
         method: "PUT",
-        headers: { "Content-Type": "application/ogg" },
+        headers: { "Content-Type": "audio/wav" },
         body: this.recordingFile,
       };
       fetch(newUploadDestination.dryUploadUrl, dryRequestOptions)
         .then(() => {
           const wetRequestOptions = {
             method: "PUT",
-            headers: { "Content-Type": "application/ogg" },
+            headers: { "Content-Type": "audio/wav" },
             body: this.wetRecordingFile,
           };
           fetch(newUploadDestination.wetUploadUrl, wetRequestOptions)
