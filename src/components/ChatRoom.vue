@@ -168,26 +168,31 @@
               wetRecordedAudioUrl
             "
           >
-            <img
-              src="@/assets/icons8-checkmark-50.png"
-              @click="approveRecorded"
-              class="approve-recorded"
-            />
-            <img
-              src="@/assets/icons8-microphone-60.png"
-              @click="recordAudio"
-              class="record-button"
-            />
-            <audio
-              controls
-              :src="wetRecordedAudioUrl"
-              controlsList="nodownload nofullscreen noremoteplayback"
-            ></audio>
-            <img
-              src="@/assets/icons8-bin-48.png"
-              @click="deleteRecorded"
-              class="bin-button"
-            />
+            <div>
+              <textarea v-model="messageToSend" readonly />
+            </div>
+            <div>
+              <img
+                src="@/assets/icons8-checkmark-50.png"
+                @click="approveRecorded"
+                class="approve-recorded"
+              />
+              <img
+                src="@/assets/icons8-microphone-60.png"
+                @click="recordAudio"
+                class="record-button"
+              />
+              <audio
+                controls
+                :src="wetRecordedAudioUrl"
+                controlsList="nodownload nofullscreen noremoteplayback"
+              ></audio>
+              <img
+                src="@/assets/icons8-bin-48.png"
+                @click="deleteRecorded"
+                class="bin-button"
+              />
+            </div>
           </div>
         </div>
         <div class="recording" v-else>
@@ -742,6 +747,7 @@ export default {
   transform: scale(0.9);
   display: flex;
   justify-content: center;
+  flex-direction: column;
 }
 .recording {
   display: flex;
