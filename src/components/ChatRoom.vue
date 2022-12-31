@@ -169,7 +169,28 @@
             "
           >
             <div>
-              <textarea v-model="messageToSend" readonly />
+              Voice Effect:
+              <div class="dropup">
+                <button class="dropbtn">Dropup</button>
+                <div class="dropup-content">
+                  <p>Link 1</p>
+                  <p>Link 2</p>
+                  <p>Link 3</p>
+                </div>
+              </div>
+              Transcribe to:
+              <div class="dropup">
+                <button class="dropbtn">{{ selectedLanguage }}</button>
+                <div class="dropup-content">
+                  <p
+                    @click="selectLanguage(language)"
+                    v-for="language in languages"
+                    :key="language"
+                  >
+                    {{ language }}
+                  </p>
+                </div>
+              </div>
             </div>
             <div>
               <img
@@ -354,9 +375,14 @@ export default {
       editMessageId: "",
       messageToEdit: "",
       lastApprovedRecordedAudioUrl: "",
+      languages: ["English", "French"],
+      selectedLanguage: "English",
     };
   },
   methods: {
+    selectLanguage: function (language) {
+      this.selectedLanguage = language;
+    },
     updateMessage: function (messageId) {
       this.roomWebSocket.send(
         JSON.stringify({
@@ -627,6 +653,47 @@ export default {
 </script>
 
 <style scoped>
+.dropbtn {
+  background-color: #21cfbc;
+  color: white;
+  padding: 16px;
+  font-size: 16px;
+  border: none;
+  width: 5em;
+}
+
+.dropup {
+  position: relative;
+  display: inline-block;
+}
+
+.dropup-content {
+  display: none;
+  position: absolute;
+  background-color: #ebebeb;
+  min-width: 160px;
+  bottom: 50px;
+  z-index: 1;
+}
+
+.dropup-content p {
+  color: black;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+}
+
+.dropup-content p:hover {
+  background-color: #ccc;
+}
+
+.dropup:hover .dropup-content {
+  display: block;
+}
+
+.dropup:hover .dropbtn {
+  background-color: #abf1ea;
+}
 .input-container {
   display: flex;
   justify-content: center;
