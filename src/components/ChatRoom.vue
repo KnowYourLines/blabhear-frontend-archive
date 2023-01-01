@@ -268,7 +268,14 @@
           </span>
         </div>
       </div>
-      <div v-else-if="showRecordingSettings">{{ selectedLanguage }}</div>
+      <div v-else-if="showRecordingSettings">
+        Transcribe voice notes to:
+        <select v-model="chosenLanguage" @change="changeLanguage()">
+          <option v-for="language in languages" :key="language">
+            {{ language }}
+          </option>
+        </select>
+      </div>
     </div>
   </div>
   <div class="column" v-else>
@@ -371,6 +378,7 @@ export default {
       messageToEdit: "",
       lastApprovedRecordedAudioUrl: "",
       showRecordingSettings: false,
+      chosenLanguage: "",
       languages: [
         "English",
         "English (GB)",
@@ -400,14 +408,23 @@ export default {
         "Hindi (Roman)",
         "German",
         "Flemish",
-        "Dutch",
+        "Dutch/Flemish",
         "Danish",
+        "Chinese",
         "Chinese (CN)",
         "Chinese (TW)",
       ],
     };
   },
   methods: {
+    changeLanguage: function () {
+      this.roomWebSocket.send(
+        JSON.stringify({
+          command: "change_language",
+          language: this.chosenLanguage,
+        })
+      );
+    },
     updateMessage: function (messageId) {
       this.roomWebSocket.send(
         JSON.stringify({
@@ -626,6 +643,9 @@ export default {
     },
   },
   watch: {
+    selectedLanguage(newLanguage) {
+      this.chosenLanguage = newLanguage;
+    },
     privacy(newPrivacy) {
       this.privateRoom = newPrivacy;
     },
@@ -686,6 +706,7 @@ export default {
   created() {
     this.shareable = typeof navigator.share === "function";
     this.privateRoom = this.privacy;
+    this.chosenLanguage = this.selectedLanguage;
   },
 };
 </script>

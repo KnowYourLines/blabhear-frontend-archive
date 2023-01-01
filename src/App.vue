@@ -273,7 +273,7 @@ export default {
             wetFilename: data.wet_filename,
           };
         } else if (data.type == "recording_settings") {
-          this.selectedLanguage = data.language;
+          this.selectedLanguage = data.language_name;
         }
       };
       this.roomWebSocket.onerror = (e) => {
