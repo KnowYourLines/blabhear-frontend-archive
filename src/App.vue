@@ -45,6 +45,7 @@
       :authToken="authToken"
       :room="room"
       :userId="userId"
+      :selectedLanguage="selectedLanguage"
       @go-home="goHome"
     />
   </div>
@@ -84,6 +85,7 @@ export default {
       messages: [],
       page: 0,
       uploadDestination: {},
+      selectedLanguage: "",
     };
   },
   methods: {
@@ -270,6 +272,8 @@ export default {
             dryFilename: data.dry_filename,
             wetFilename: data.wet_filename,
           };
+        } else if (data.type == "recording_settings") {
+          this.selectedLanguage = data.language;
         }
       };
       this.roomWebSocket.onerror = (e) => {

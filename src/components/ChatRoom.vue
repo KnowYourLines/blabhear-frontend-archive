@@ -37,6 +37,20 @@
           @contextmenu.prevent
           class="show-chat"
         />
+        <img
+          v-if="!showRecordingSettings"
+          src="@/assets/icons8-magic-wand-64.png"
+          @click="showRoomRecordingSettings"
+          @contextmenu.prevent
+          class="show-magic"
+        />
+        <img
+          v-if="showRecordingSettings"
+          src="@/assets/icons8-communication-50.png"
+          @click="hideRoomRecordingSettings"
+          @contextmenu.prevent
+          class="show-chat"
+        />
       </div>
 
       <label for="name">Group Name:</label><br /><br />
@@ -66,7 +80,7 @@
           class="edit-button"
         />
       </div>
-      <div v-if="!showMembers" id="conversation">
+      <div v-if="!showMembers && !showRecordingSettings" id="conversation">
         <div class="conversation-container" ref="messages" @scroll="onScroll">
           <div
             v-for="message in messages"
@@ -202,7 +216,7 @@
           </div>
         </div>
       </div>
-      <div v-else id="room-members">
+      <div v-else-if="showMembers" id="room-members">
         <br />
         <Toggle v-model="privateRoom" @change="updatePrivacy">
           <template v-slot:label="{ checked, classList }">
@@ -254,6 +268,7 @@
           </span>
         </div>
       </div>
+      <div v-else-if="showRecordingSettings">{{ selectedLanguage }}</div>
     </div>
   </div>
   <div class="column" v-else>
@@ -331,6 +346,10 @@ export default {
       type: Object,
       required: true,
     },
+    selectedLanguage: {
+      type: String,
+      required: true,
+    },
   },
   data() {
     return {
@@ -351,6 +370,7 @@ export default {
       editMessageId: "",
       messageToEdit: "",
       lastApprovedRecordedAudioUrl: "",
+      showRecordingSettings: false,
       languages: [
         "English",
         "English (GB)",
@@ -385,7 +405,6 @@ export default {
         "Chinese (CN)",
         "Chinese (TW)",
       ],
-      selectedLanguage: "English",
     };
   },
   methods: {
@@ -420,11 +439,24 @@ export default {
     },
     showRoomMembers: function () {
       this.showMembers = true;
+      this.showRecordingSettings = false;
       if (this.isRecording) {
         this.pauseRecording();
       }
     },
     hideRoomMembers: function () {
+      this.showMembers = false;
+      this.showRecordingSettings = false;
+    },
+    showRoomRecordingSettings: function () {
+      this.showRecordingSettings = true;
+      this.showMembers = false;
+      if (this.isRecording) {
+        this.pauseRecording();
+      }
+    },
+    hideRoomRecordingSettings: function () {
+      this.showRecordingSettings = false;
       this.showMembers = false;
     },
     returnHome: function () {
@@ -791,6 +823,13 @@ export default {
   cursor: pointer;
 }
 .show-members:hover {
+  background: #e0e0e0;
+}
+.show-magic {
+  border-radius: 70%;
+  cursor: pointer;
+}
+.show-magic:hover {
   background: #e0e0e0;
 }
 .show-chat {
