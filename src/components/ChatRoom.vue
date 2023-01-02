@@ -269,7 +269,7 @@
         </div>
       </div>
       <div v-else-if="showRecordingSettings">
-        Transcribe to:
+        Transcribe my voice to:
         <select v-model="chosenLanguage" @change="changeLanguage()">
           <option v-for="language in languages" :key="language">
             {{ language }}
