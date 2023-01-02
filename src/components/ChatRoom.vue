@@ -94,7 +94,7 @@
                   :ref="message.filename + '-player'"
                   controls
                   :src="message.download"
-                  controlsList="nodownload nofullscreen noremoteplayback"
+                  controlsList="nodownload nofullscreen noremoteplayback noplaybackrate"
                 ></audio>
               </div>
               <div class="message-timestamp">{{ message.created_at }}</div>
@@ -196,7 +196,7 @@
               <audio
                 controls
                 :src="wetRecordedAudioUrl"
-                controlsList="nodownload nofullscreen noremoteplayback"
+                controlsList="nodownload nofullscreen noremoteplayback noplaybackrate"
               ></audio>
               <img
                 src="@/assets/icons8-bin-48.png"
@@ -398,8 +398,8 @@ export default {
         "Wobble",
         "Echo",
         "Fuzzy",
-        "Speed Up",
-        "Slow Down",
+        "Hyper",
+        "Sleepy",
       ],
       languages: [
         "English",
@@ -650,10 +650,10 @@ export default {
       );
     },
     applyVoiceEffect: function () {
-      let speedChange;
-      if (this.chosenVoiceEffect == "Speed Up") {
+      let speedChange = 1;
+      if (this.chosenVoiceEffect == "Hyper") {
         speedChange = 2;
-      } else if (this.chosenVoiceEffect == "Slow Down") {
+      } else if (this.chosenVoiceEffect == "Sleepy") {
         speedChange = 0.5;
       }
       new Tone.Buffer(this.recordedAudioUrl, (toneAudioBuffer) => {
@@ -672,13 +672,13 @@ export default {
           } else if (this.chosenVoiceEffect == "Echo") {
             voiceEffect = new Tone.FeedbackDelay("8n", 0.5);
           } else if (this.chosenVoiceEffect == "Fuzzy") {
-            voiceEffect = new Tone.Distortion(0.75);
+            voiceEffect = new Tone.Distortion(1);
           } else {
             voiceEffect = new Tone.PitchShift();
             voiceEffect.pitch = 0;
-            if (this.chosenVoiceEffect == "Speed Up") {
+            if (this.chosenVoiceEffect == "Hyper") {
               sample.playbackRate = 2;
-            } else if (this.chosenVoiceEffect == "Slow Down") {
+            } else if (this.chosenVoiceEffect == "Sleepy") {
               sample.playbackRate = 0.5;
             }
           }
