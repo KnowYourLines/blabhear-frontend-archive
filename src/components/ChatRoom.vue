@@ -667,7 +667,7 @@ export default {
           } else if (this.chosenVoiceEffect == "Wobble") {
             voiceEffect = new Tone.Vibrato(10, 0.75);
           } else if (this.chosenVoiceEffect == "Echo") {
-            voiceEffect = new Tone.FeedbackDelay("8n", 0.5);
+            voiceEffect = new Tone.FeedbackDelay("8hz", 0.75).toDestination();
           } else if (this.chosenVoiceEffect == "Fuzzy") {
             voiceEffect = new Tone.Distortion(1);
           } else {
