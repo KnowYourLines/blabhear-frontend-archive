@@ -275,7 +275,7 @@
             {{ language }}
           </option>
         </select>
-        <br/><br/>
+        <br /><br />
         Voice effect:
         <select v-model="chosenVoiceEffect" @change="changeVoiceEffect()">
           <option v-for="effect in voiceEffects" :key="effect">
@@ -623,24 +623,7 @@ export default {
           window.URL.revokeObjectURL(this.recordedAudioUrl);
         }
         this.recordedAudioUrl = window.URL.createObjectURL(this.recordingFile);
-        new Tone.Buffer(this.recordedAudioUrl, (toneAudioBuffer) => {
-          Tone.Offline((context) => {
-            const pitchShift = new Tone.PitchShift();
-            pitchShift.pitch = 7; // up a fifth
-            const sample = new Tone.Player();
-            sample.buffer = toneAudioBuffer;
-            sample.chain(pitchShift, context.destination);
-            sample.start(0, 0);
-          }, toneAudioBuffer.duration).then((buffer) => {
-            this.wetRecordingFile = bufferToWav(buffer, buffer.length);
-            if (this.wetRecordedAudioUrl) {
-              window.URL.revokeObjectURL(this.wetRecordedAudioUrl);
-            }
-            this.wetRecordedAudioUrl = window.URL.createObjectURL(
-              this.wetRecordingFile
-            );
-          });
-        });
+        this.applyVoiceEffect();
       }
     },
     deleteRecorded: function () {
@@ -657,6 +640,35 @@ export default {
         })
       );
     },
+    applyVoiceEffect: function () {
+      new Tone.Buffer(this.recordedAudioUrl, (toneAudioBuffer) => {
+        Tone.Offline((context) => {
+          const sample = new Tone.Player();
+          sample.buffer = toneAudioBuffer;
+          let voiceEffect;
+          if (this.chosenVoiceEffect == "None") {
+            voiceEffect = new Tone.PitchShift();
+            voiceEffect.pitch = 0;
+          } else if (this.chosenVoiceEffect == "High Pitch") {
+            voiceEffect = new Tone.PitchShift();
+            voiceEffect.pitch = 5;
+          } else if (this.chosenVoiceEffect == "Low Pitch") {
+            voiceEffect = new Tone.PitchShift();
+            voiceEffect.pitch = -5;
+          }
+          sample.chain(voiceEffect, context.destination);
+          sample.start(0, 0);
+        }, toneAudioBuffer.duration).then((buffer) => {
+          this.wetRecordingFile = bufferToWav(buffer, buffer.length);
+          if (this.wetRecordedAudioUrl) {
+            window.URL.revokeObjectURL(this.wetRecordedAudioUrl);
+          }
+          this.wetRecordedAudioUrl = window.URL.createObjectURL(
+            this.wetRecordingFile
+          );
+        });
+      });
+    },
   },
   computed: {
     roomMessages() {
@@ -664,6 +676,11 @@ export default {
     },
   },
   watch: {
+    chosenVoiceEffect() {
+      if (this.recordedAudioUrl) {
+        this.applyVoiceEffect();
+      }
+    },
     selectedLanguage(newLanguage) {
       this.chosenLanguage = newLanguage;
     },
