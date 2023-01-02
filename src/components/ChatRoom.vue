@@ -649,9 +649,9 @@ export default {
     applyVoiceEffect: function () {
       let speedChange = 1;
       if (this.chosenVoiceEffect == "Hyper") {
-        speedChange = 2;
+        speedChange = 1.5;
       } else if (this.chosenVoiceEffect == "Sleepy") {
-        speedChange = 0.5;
+        speedChange = 0.67;
       }
       new Tone.Buffer(this.recordedAudioUrl, (toneAudioBuffer) => {
         Tone.Offline((context) => {
@@ -674,9 +674,9 @@ export default {
             voiceEffect = new Tone.PitchShift();
             voiceEffect.pitch = 0;
             if (this.chosenVoiceEffect == "Hyper") {
-              sample.playbackRate = 2;
+              sample.playbackRate = speedChange;
             } else if (this.chosenVoiceEffect == "Sleepy") {
-              sample.playbackRate = 0.5;
+              sample.playbackRate = speedChange;
             }
           }
           sample.chain(voiceEffect, context.destination);
