@@ -1,5 +1,5 @@
 <template>
-  <div class="column" v-if="leftRoom">
+  <div class="column" v-if="leftRoom == room">
     <img
       src="@/assets/icons8-home-48.png"
       @click="returnHome"
@@ -13,7 +13,7 @@
     /><br /><br />
     You left the room. Refresh to rejoin.
   </div>
-  <div v-else-if="userAllowed">
+  <div v-else-if="userNotAllowedInRoom != room">
     <div class="column">
       <div>
         <img
@@ -34,6 +34,20 @@
           v-if="showMembers"
           src="@/assets/icons8-communication-50.png"
           @click="hideRoomMembers"
+          @contextmenu.prevent
+          class="show-chat"
+        />
+        <img
+          v-if="!showRecordingSettings"
+          src="@/assets/icons8-magic-wand-64.png"
+          @click="showRoomRecordingSettings"
+          @contextmenu.prevent
+          class="show-magic"
+        />
+        <img
+          v-if="showRecordingSettings"
+          src="@/assets/icons8-communication-50.png"
+          @click="hideRoomRecordingSettings"
           @contextmenu.prevent
           class="show-chat"
         />
@@ -66,7 +80,7 @@
           class="edit-button"
         />
       </div>
-      <div v-if="!showMembers" id="conversation">
+      <div v-if="!showMembers && !showRecordingSettings" id="conversation">
         <div class="conversation-container" ref="messages" @scroll="onScroll">
           <div
             v-for="message in messages"
@@ -77,9 +91,10 @@
             <div class="bubble">
               <div class="message-audio" v-if="message.filename != 'None'">
                 <audio
+                  :ref="message.filename + '-player'"
                   controls
                   :src="message.download"
-                  controlsList="nodownload nofullscreen noremoteplayback"
+                  controlsList="nodownload nofullscreen noremoteplayback noplaybackrate"
                 ></audio>
               </div>
               <div class="message-timestamp">{{ message.created_at }}</div>
@@ -162,28 +177,33 @@
           </div>
           <div
             class="playback"
-            v-else-if="lastApprovedRecordedAudioUrl != recordedAudioUrl"
+            v-else-if="
+              lastApprovedRecordedAudioUrl != wetRecordedAudioUrl &&
+              wetRecordedAudioUrl
+            "
           >
-            <img
-              src="@/assets/icons8-checkmark-50.png"
-              @click="approveRecorded"
-              class="approve-recorded"
-            />
-            <img
-              src="@/assets/icons8-microphone-60.png"
-              @click="recordAudio"
-              class="record-button"
-            />
-            <audio
-              controls
-              :src="recordedAudioUrl"
-              controlsList="nodownload nofullscreen noremoteplayback"
-            ></audio>
-            <img
-              src="@/assets/icons8-bin-48.png"
-              @click="deleteRecorded"
-              class="bin-button"
-            />
+            <div>
+              <img
+                src="@/assets/icons8-checkmark-50.png"
+                @click="approveRecorded"
+                class="approve-recorded"
+              />
+              <img
+                src="@/assets/icons8-microphone-60.png"
+                @click="recordAudio"
+                class="record-button"
+              />
+              <audio
+                controls
+                :src="wetRecordedAudioUrl"
+                controlsList="nodownload nofullscreen noremoteplayback noplaybackrate"
+              ></audio>
+              <img
+                src="@/assets/icons8-bin-48.png"
+                @click="deleteRecorded"
+                class="bin-button"
+              />
+            </div>
           </div>
         </div>
         <div class="recording" v-else>
@@ -196,7 +216,7 @@
           </div>
         </div>
       </div>
-      <div v-else id="room-members">
+      <div v-else-if="showMembers" id="room-members">
         <br />
         <Toggle v-model="privateRoom" @change="updatePrivacy">
           <template v-slot:label="{ checked, classList }">
@@ -248,6 +268,21 @@
           </span>
         </div>
       </div>
+      <div v-else-if="showRecordingSettings">
+        Transcribe to:
+        <select v-model="chosenLanguage" @change="changeLanguage()">
+          <option v-for="language in languages" :key="language">
+            {{ language }}
+          </option>
+        </select>
+        <br /><br />
+        Voice effect:
+        <select v-model="chosenVoiceEffect" @change="changeVoiceEffect()">
+          <option v-for="effect in voiceEffects" :key="effect">
+            {{ effect }}
+          </option>
+        </select>
+      </div>
     </div>
   </div>
   <div class="column" v-else>
@@ -264,6 +299,8 @@
 </template>
 
 <script>
+import * as Tone from "tone";
+import { bufferToWav } from "./bufferToWav";
 import Toggle from "@vueform/toggle";
 export default {
   name: "ChatRoom",
@@ -283,36 +320,141 @@ export default {
       type: String,
       required: true,
     },
+    roomWebSocket: {
+      type: WebSocket,
+      required: false,
+    },
+    roomMembers: {
+      type: Array,
+      required: true,
+    },
+    privacy: {
+      type: Boolean,
+      required: true,
+    },
+    userNotAllowedInRoom: {
+      type: String,
+      required: true,
+    },
+    joinRequests: {
+      type: Array,
+      required: true,
+    },
+    leftRoom: {
+      type: String,
+      required: true,
+    },
+    displayName: {
+      type: String,
+      required: true,
+    },
+    messages: {
+      type: Array,
+      required: true,
+    },
+    page: {
+      type: Number,
+      required: true,
+    },
+    uploadDestination: {
+      type: Object,
+      required: true,
+    },
+    selectedLanguage: {
+      type: String,
+      required: true,
+    },
+    selectedVoiceEffect: {
+      type: String,
+      required: true,
+    },
   },
   data() {
     return {
-      roomWebSocket: null,
-      roomMembers: [],
-      privateRoom: false,
-      userAllowed: true,
-      joinRequests: [],
       shareable: null,
-      leftRoom: false,
-      displayName: null,
+      privateRoom: false,
       editDisplayName: false,
       editableDisplayName: null,
-      messages: [],
       messageToSend: "",
-      page: 0,
       showMembers: false,
       audio: null,
       isRecording: false,
       recordingFile: null,
+      wetRecordingFile: null,
       recorder: null,
       recordingData: [],
       recordedAudioUrl: "",
+      wetRecordedAudioUrl: "",
       editMessageId: "",
       messageToEdit: "",
-      goHome: false,
       lastApprovedRecordedAudioUrl: "",
+      showRecordingSettings: false,
+      chosenLanguage: "",
+      chosenVoiceEffect: "",
+      voiceEffects: [
+        "None",
+        "High Pitch",
+        "Low Pitch",
+        "Wobble",
+        "Echo",
+        "Fuzzy",
+        "Hyper",
+        "Sleepy",
+      ],
+      languages: [
+        "English",
+        "English (GB)",
+        "English (US)",
+        "English (AU)",
+        "English (IN)",
+        "English (NZ)",
+        "French",
+        "French (CA)",
+        "Ukrainian",
+        "Spanish",
+        "Spanish (LatAm)",
+        "Turkish",
+        "Tamil",
+        "Swedish",
+        "Russian",
+        "Portuguese",
+        "Portuguese (BR)",
+        "Portuguese (PT)",
+        "Polish",
+        "Norwegian",
+        "Korean",
+        "Japanese",
+        "Italian",
+        "Indonesian",
+        "Hindi",
+        "Hindi (Roman)",
+        "German",
+        "Flemish",
+        "Dutch/Flemish",
+        "Danish",
+        "Chinese",
+        "Chinese (CN)",
+        "Chinese (TW)",
+      ],
     };
   },
   methods: {
+    changeLanguage: function () {
+      this.roomWebSocket.send(
+        JSON.stringify({
+          command: "change_language",
+          language: this.chosenLanguage,
+        })
+      );
+    },
+    changeVoiceEffect: function () {
+      this.roomWebSocket.send(
+        JSON.stringify({
+          command: "change_voice_effect",
+          voice_effect: this.chosenVoiceEffect,
+        })
+      );
+    },
     updateMessage: function (messageId) {
       this.roomWebSocket.send(
         JSON.stringify({
@@ -344,19 +486,35 @@ export default {
     },
     showRoomMembers: function () {
       this.showMembers = true;
+      this.showRecordingSettings = false;
       if (this.isRecording) {
         this.pauseRecording();
       }
     },
     hideRoomMembers: function () {
       this.showMembers = false;
+      this.showRecordingSettings = false;
+    },
+    showRoomRecordingSettings: function () {
+      this.showRecordingSettings = true;
+      this.showMembers = false;
+      if (this.isRecording) {
+        this.pauseRecording();
+      }
+    },
+    hideRoomRecordingSettings: function () {
+      this.showRecordingSettings = false;
+      this.showMembers = false;
     },
     returnHome: function () {
       const url = new URL(window.location.href);
       window.history.replaceState("", "", url.origin);
       this.$emit("go-home");
-      this.goHome = true;
-      this.roomWebSocket.close();
+      this.roomWebSocket.send(
+        JSON.stringify({
+          command: "disconnect",
+        })
+      );
     },
     returnHomeNewTab: function () {
       const url = new URL(window.location.href);
@@ -396,6 +554,7 @@ export default {
     },
     edit: function () {
       this.editDisplayName = true;
+      this.editableDisplayName = this.displayName;
       this.$nextTick(() => {
         this.$refs.editName.select();
       });
@@ -413,18 +572,19 @@ export default {
         })
       );
     },
-    sendMessage: function (filename) {
+    sendMessage: function (dryFilename, wetFilename) {
       this.roomWebSocket.send(
         JSON.stringify({
           message: this.messageToSend,
-          filename: filename,
+          dry_filename: dryFilename,
+          wet_filename: wetFilename,
           command: "send_message",
         })
       );
       this.messageToSend = "";
     },
     onScroll({ target: { scrollTop } }) {
-      if (scrollTop == 0) {
+      if (scrollTop == 0 && this.page > 0) {
         this.roomWebSocket.send(
           JSON.stringify({
             page: this.page + 1,
@@ -434,11 +594,25 @@ export default {
       }
     },
     recordAudio: function () {
-      this.isRecording = true;
-      this.isPlaying = false;
+      Object.keys(this.$refs).filter((ref) => {
+        if (ref.includes("player")) {
+          if (!ref.paused && this.$refs[ref] && this.$refs[ref][0]) {
+            this.$refs[ref][0].pause();
+          }
+        }
+      });
       if (!this.recorder || this.recorder.state == "inactive") {
         this.audio.then((stream) => {
           this.recorder = new MediaRecorder(stream);
+          this.recorder.onstart = () => {
+            this.isRecording = true;
+          };
+          this.recorder.onresume = () => {
+            this.isRecording = true;
+          };
+          this.recorder.onpause = () => {
+            this.isRecording = false;
+          };
           this.recorder.ondataavailable = (event) => {
             this.recordingData.push(event.data);
           };
@@ -450,12 +624,15 @@ export default {
     },
     pauseRecording: function () {
       if (this.recorder) {
-        this.isRecording = false;
         this.recorder.pause();
         this.recordingFile = new Blob(this.recordingData, {
           type: "audio/ogg; codecs=opus",
         });
+        if (this.recordedAudioUrl) {
+          window.URL.revokeObjectURL(this.recordedAudioUrl);
+        }
         this.recordedAudioUrl = window.URL.createObjectURL(this.recordingFile);
+        this.applyVoiceEffect();
       }
     },
     deleteRecorded: function () {
@@ -465,168 +642,139 @@ export default {
       this.recordingData = [];
     },
     approveRecorded: function () {
-      this.lastApprovedRecordedAudioUrl = this.recordedAudioUrl;
+      this.lastApprovedRecordedAudioUrl = this.wetRecordedAudioUrl;
       this.roomWebSocket.send(
         JSON.stringify({
           command: "fetch_upload_url",
         })
       );
     },
-    connectWebSocket: function () {
-      const backendUrl = new URL(process.env.VUE_APP_BACKEND_URL);
-      const ws_scheme = backendUrl.protocol == "https:" ? "wss" : "ws";
-      const path =
-        ws_scheme +
-        "://" +
-        backendUrl.hostname +
-        ":" +
-        backendUrl.port +
-        "/ws/room/" +
-        this.room +
-        "/?token=" +
-        this.authToken;
-      this.roomWebSocket = new WebSocket(path);
-      this.roomWebSocket.onopen = () => {
-        console.log("Room WebSocket open");
-      };
-      this.roomWebSocket.onmessage = (message) => {
-        const data = JSON.parse(message.data);
-        if ("members" in data) {
-          this.roomMembers = data.members;
-        } else if (data.type == "refresh_members") {
-          this.roomWebSocket.send(
-            JSON.stringify({
-              command: "fetch_members",
-            })
-          );
-        } else if ("privacy" in data) {
-          this.privateRoom = data.privacy;
-        } else if (data.type == "refresh_privacy") {
-          this.roomWebSocket.send(JSON.stringify({ command: "fetch_privacy" }));
-        } else if ("allowed" in data) {
-          this.userAllowed = data.allowed;
-        } else if (data.type == "refresh_allowed_status") {
-          this.roomWebSocket.send(
-            JSON.stringify({ command: "fetch_allowed_status" })
-          );
-        } else if ("join_requests" in data) {
-          this.joinRequests = data.join_requests;
-        } else if (data.type == "refresh_join_requests") {
-          this.roomWebSocket.send(
-            JSON.stringify({
-              command: "fetch_join_requests",
-            })
-          );
-        } else if (data.type == "left_room") {
-          this.leftRoom = true;
-        } else if ("display_name" in data) {
-          this.displayName = data.display_name;
-          this.editableDisplayName = data.display_name;
-        } else if ("new_message" in data) {
-          const newMessage = data.new_message;
-          const messageContainer = this.$refs.messages;
-          const wasAtBottom =
-            messageContainer.getBoundingClientRect().bottom <=
-              messageContainer.scrollTop + messageContainer.clientHeight &&
-            messageContainer.scrollHeight ==
-              Math.round(
-                messageContainer.scrollTop + messageContainer.clientHeight
-              );
-          this.messages.push(newMessage);
-          if (newMessage.creator__username == this.userId || wasAtBottom) {
-            this.$nextTick(() => {
-              const messageContainer = this.$refs.messages;
-              messageContainer.scrollTop = messageContainer.scrollHeight;
-            });
-          }
-        } else if ("messages" in data) {
-          if (data.page > this.page) {
-            this.messages.unshift(...data.messages);
-            this.page = data.page;
-            const oldScrollHeight = this.$refs.messages.scrollHeight;
-            this.$nextTick(() => {
-              this.$refs.messages.scrollTop =
-                this.$refs.messages.scrollHeight - oldScrollHeight;
-            });
-            if (data.refresh_messages_in) {
-              clearTimeout();
-              setTimeout(() => {
-                const maxPage = Math.max(
-                  Math.ceil(this.messages.length / 10),
-                  1
-                );
-                this.messages = [];
-                this.page = 0;
-                this.roomWebSocket.send(
-                  JSON.stringify({
-                    page: maxPage,
-                    command: "fetch_messages_up_to_page",
-                  })
-                );
-              }, data.refresh_messages_in);
+    applyVoiceEffect: function () {
+      let speedChange = 1;
+      if (this.chosenVoiceEffect == "Hyper") {
+        speedChange = 2;
+      } else if (this.chosenVoiceEffect == "Sleepy") {
+        speedChange = 0.5;
+      }
+      new Tone.Buffer(this.recordedAudioUrl, (toneAudioBuffer) => {
+        Tone.Offline((context) => {
+          const sample = new Tone.Player();
+          sample.buffer = toneAudioBuffer;
+          let voiceEffect;
+          if (this.chosenVoiceEffect == "High Pitch") {
+            voiceEffect = new Tone.PitchShift();
+            voiceEffect.pitch = 7;
+          } else if (this.chosenVoiceEffect == "Low Pitch") {
+            voiceEffect = new Tone.PitchShift();
+            voiceEffect.pitch = -7;
+          } else if (this.chosenVoiceEffect == "Wobble") {
+            voiceEffect = new Tone.Vibrato(10, 0.75);
+          } else if (this.chosenVoiceEffect == "Echo") {
+            voiceEffect = new Tone.FeedbackDelay("8n", 0.5);
+          } else if (this.chosenVoiceEffect == "Fuzzy") {
+            voiceEffect = new Tone.Distortion(1);
+          } else {
+            voiceEffect = new Tone.PitchShift();
+            voiceEffect.pitch = 0;
+            if (this.chosenVoiceEffect == "Hyper") {
+              sample.playbackRate = 2;
+            } else if (this.chosenVoiceEffect == "Sleepy") {
+              sample.playbackRate = 0.5;
             }
           }
-        } else if (data.type == "refresh_messages") {
-          const maxPage = Math.max(Math.ceil(this.messages.length / 10), 1);
-          this.messages = [];
-          this.page = 0;
-          this.roomWebSocket.send(
-            JSON.stringify({
-              page: maxPage,
-              command: "fetch_messages_up_to_page",
-            })
+          sample.chain(voiceEffect, context.destination);
+          sample.start(0, 0);
+        }, toneAudioBuffer.duration / speedChange).then((buffer) => {
+          this.wetRecordingFile = bufferToWav(buffer, buffer.length);
+          if (this.wetRecordedAudioUrl) {
+            window.URL.revokeObjectURL(this.wetRecordedAudioUrl);
+          }
+          this.wetRecordedAudioUrl = window.URL.createObjectURL(
+            this.wetRecordingFile
           );
-        } else if (data.type == "refresh_display_name") {
-          this.roomWebSocket.send(
-            JSON.stringify({
-              command: "fetch_display_name",
-            })
-          );
-        } else if (data.type == "room_notified") {
-          this.roomWebSocket.send(
-            JSON.stringify({
-              command: "read_room_notification",
-            })
-          );
-        } else if ("upload_url" in data) {
-          const requestOptions = {
-            method: "PUT",
-            headers: { "Content-Type": "application/ogg" },
-            body: this.recordingFile,
-          };
-          fetch(data.upload_url, requestOptions)
-            .then(() => {
-              this.sendMessage(data.filename);
-              this.deleteRecorded();
-            })
-            .catch((error) => console.log(error));
-        }
-      };
-      this.roomWebSocket.onerror = (e) => {
-        console.log(e.message);
-      };
-      this.roomWebSocket.onclose = () => {
-        console.log("Room WebSocket closed");
-        if (!this.goHome) {
-          this.connectWebSocket();
-        }
-      };
+        });
+      });
+    },
+  },
+  computed: {
+    roomMessages() {
+      return this.messages.slice();
     },
   },
   watch: {
-    userId() {
-      if (this.roomWebSocket) {
-        this.roomWebSocket.close();
-      } else {
-        this.connectWebSocket();
+    chosenVoiceEffect() {
+      if (this.recordedAudioUrl) {
+        this.applyVoiceEffect();
       }
+    },
+    selectedLanguage(newLanguage) {
+      this.chosenLanguage = newLanguage;
+    },
+    selectedVoiceEffect(newEffect) {
+      this.chosenVoiceEffect = newEffect;
+    },
+    privacy(newPrivacy) {
+      this.privateRoom = newPrivacy;
+    },
+    roomMessages(newMessages, oldMessages) {
+      if (
+        newMessages.at(-1) != oldMessages.at(-1) &&
+        newMessages.length == oldMessages.length + 1
+      ) {
+        const messageContainer = this.$refs.messages;
+        const wasAtBottom =
+          messageContainer.getBoundingClientRect().bottom <=
+            messageContainer.scrollTop + messageContainer.clientHeight &&
+          messageContainer.scrollHeight ==
+            Math.round(
+              messageContainer.scrollTop + messageContainer.clientHeight
+            );
+        const newMessage = this.messages.at(-1);
+        if (newMessage.creator__username == this.userId || wasAtBottom) {
+          this.$nextTick(() => {
+            const messageContainer = this.$refs.messages;
+            messageContainer.scrollTop = messageContainer.scrollHeight;
+          });
+        }
+      } else if (newMessages.length > oldMessages.length) {
+        const oldScrollHeight = this.$refs.messages.scrollHeight;
+        this.$nextTick(() => {
+          this.$refs.messages.scrollTop =
+            this.$refs.messages.scrollHeight - oldScrollHeight;
+        });
+      }
+    },
+    uploadDestination(newUploadDestination) {
+      const dryRequestOptions = {
+        method: "PUT",
+        headers: { "Content-Type": "audio/wav" },
+        body: this.recordingFile,
+      };
+      fetch(newUploadDestination.dryUploadUrl, dryRequestOptions)
+        .then(() => {
+          const wetRequestOptions = {
+            method: "PUT",
+            headers: { "Content-Type": "audio/wav" },
+            body: this.wetRecordingFile,
+          };
+          fetch(newUploadDestination.wetUploadUrl, wetRequestOptions)
+            .then(() => {
+              this.sendMessage(
+                newUploadDestination.dryFilename,
+                newUploadDestination.wetFilename
+              );
+              this.deleteRecorded();
+            })
+            .catch((error) => console.log(error));
+        })
+        .catch((error) => console.log(error));
     },
   },
   created() {
     this.shareable = typeof navigator.share === "function";
-    if (this.userId) {
-      this.connectWebSocket();
-    }
+    this.privateRoom = this.privacy;
+    this.chosenLanguage = this.selectedLanguage;
+    this.chosenVoiceEffect = this.selectedVoiceEffect;
   },
 };
 </script>
@@ -752,6 +900,7 @@ export default {
   transform: scale(0.9);
   display: flex;
   justify-content: center;
+  flex-direction: column;
 }
 .recording {
   display: flex;
@@ -763,6 +912,13 @@ export default {
   cursor: pointer;
 }
 .show-members:hover {
+  background: #e0e0e0;
+}
+.show-magic {
+  border-radius: 70%;
+  cursor: pointer;
+}
+.show-magic:hover {
   background: #e0e0e0;
 }
 .show-chat {

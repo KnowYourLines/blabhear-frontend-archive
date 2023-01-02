@@ -80,30 +80,34 @@ export default {
       type: String,
       required: true,
     },
+    userWebSocket: {
+      type: WebSocket,
+      required: false,
+    },
+    notifications: {
+      type: Array,
+      required: true,
+    },
+    displayName: {
+      type: String,
+      required: true,
+    },
   },
   data() {
     return {
-      userWebSocket: null,
-      notifications: [],
-      displayName: null,
       editDisplayName: false,
       editableDisplayName: null,
-      goToRoom: false,
     };
   },
   methods: {
     createNewRoom: function () {
       this.$emit("new-room");
-      this.goToRoom = true;
-      this.userWebSocket.close();
     },
     visitRoom: function (room) {
       const url = new URL(window.location.href);
       url.searchParams.set("room", room);
       window.history.replaceState("", "", url);
       this.$emit("visit-room");
-      this.goToRoom = true;
-      this.userWebSocket.close();
     },
     visitRoomNewTab: function (room) {
       const url = new URL(window.location.href);
@@ -134,63 +138,7 @@ export default {
         })
       );
     },
-    connectWebsocket: function () {
-      const backendUrl = new URL(process.env.VUE_APP_BACKEND_URL);
-      const ws_scheme = backendUrl.protocol == "https:" ? "wss" : "ws";
-      const path =
-        ws_scheme +
-        "://" +
-        backendUrl.hostname +
-        ":" +
-        backendUrl.port +
-        "/ws/user/" +
-        this.userId +
-        "/?token=" +
-        this.authToken;
-      this.userWebSocket = new WebSocket(path);
-      this.userWebSocket.onopen = () => {
-        console.log("User WebSocket open");
-      };
-      this.userWebSocket.onmessage = (message) => {
-        const data = JSON.parse(message.data);
-        if ("notifications" in data) {
-          this.notifications = data.notifications;
-        } else if (data.type == "refresh_notifications") {
-          this.userWebSocket.send(
-            JSON.stringify({
-              command: "fetch_notifications",
-            })
-          );
-        } else if ("display_name" in data) {
-          this.displayName = data.display_name;
-          this.editableDisplayName = data.display_name;
-        }
-      };
-      this.userWebSocket.onerror = (e) => {
-        console.log(e.message);
-      };
-      this.userWebSocket.onclose = () => {
-        console.log("User WebSocket closed");
-        if (!this.goToRoom) {
-          this.connectWebsocket();
-        }
-      };
-    },
-  },
-  watch: {
-    userId() {
-      if (this.userWebSocket) {
-        this.userWebSocket.close();
-      } else {
-        this.connectWebsocket();
-      }
-    },
-  },
-  created() {
-    if (this.userId) {
-      this.connectWebsocket();
-    }
-  },
+  }
 };
 </script>
 
