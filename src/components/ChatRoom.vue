@@ -391,7 +391,16 @@ export default {
       showRecordingSettings: false,
       chosenLanguage: "",
       chosenVoiceEffect: "",
-      voiceEffects: ["None", "High Pitch", "Low Pitch"],
+      voiceEffects: [
+        "None",
+        "High Pitch",
+        "Low Pitch",
+        "Wobble",
+        "Echo",
+        "Fuzzy",
+        "Speed Up",
+        "Slow Down",
+      ],
       languages: [
         "English",
         "English (GB)",
@@ -641,24 +650,41 @@ export default {
       );
     },
     applyVoiceEffect: function () {
+      let speedChange;
+      if (this.chosenVoiceEffect == "Speed Up") {
+        speedChange = 2;
+      } else if (this.chosenVoiceEffect == "Slow Down") {
+        speedChange = 0.5;
+      }
       new Tone.Buffer(this.recordedAudioUrl, (toneAudioBuffer) => {
         Tone.Offline((context) => {
           const sample = new Tone.Player();
           sample.buffer = toneAudioBuffer;
           let voiceEffect;
-          if (this.chosenVoiceEffect == "None") {
-            voiceEffect = new Tone.PitchShift();
-            voiceEffect.pitch = 0;
-          } else if (this.chosenVoiceEffect == "High Pitch") {
+          if (this.chosenVoiceEffect == "High Pitch") {
             voiceEffect = new Tone.PitchShift();
             voiceEffect.pitch = 5;
           } else if (this.chosenVoiceEffect == "Low Pitch") {
             voiceEffect = new Tone.PitchShift();
             voiceEffect.pitch = -5;
+          } else if (this.chosenVoiceEffect == "Wobble") {
+            voiceEffect = new Tone.Vibrato(10, 0.75);
+          } else if (this.chosenVoiceEffect == "Echo") {
+            voiceEffect = new Tone.FeedbackDelay("8n", 0.5);
+          } else if (this.chosenVoiceEffect == "Fuzzy") {
+            voiceEffect = new Tone.Distortion(0.75);
+          } else {
+            voiceEffect = new Tone.PitchShift();
+            voiceEffect.pitch = 0;
+            if (this.chosenVoiceEffect == "Speed Up") {
+              sample.playbackRate = 2;
+            } else if (this.chosenVoiceEffect == "Slow Down") {
+              sample.playbackRate = 0.5;
+            }
           }
           sample.chain(voiceEffect, context.destination);
           sample.start(0, 0);
-        }, toneAudioBuffer.duration).then((buffer) => {
+        }, toneAudioBuffer.duration / speedChange).then((buffer) => {
           this.wetRecordingFile = bufferToWav(buffer, buffer.length);
           if (this.wetRecordedAudioUrl) {
             window.URL.revokeObjectURL(this.wetRecordedAudioUrl);
