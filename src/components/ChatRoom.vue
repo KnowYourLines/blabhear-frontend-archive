@@ -660,10 +660,10 @@ export default {
           let voiceEffect;
           if (this.chosenVoiceEffect == "High Pitch") {
             voiceEffect = new Tone.PitchShift();
-            voiceEffect.pitch = 7;
+            voiceEffect.pitch = 5;
           } else if (this.chosenVoiceEffect == "Low Pitch") {
             voiceEffect = new Tone.PitchShift();
-            voiceEffect.pitch = -7;
+            voiceEffect.pitch = -5;
           } else if (this.chosenVoiceEffect == "Wobble") {
             voiceEffect = new Tone.Vibrato(10, 0.75);
           } else if (this.chosenVoiceEffect == "Echo") {
