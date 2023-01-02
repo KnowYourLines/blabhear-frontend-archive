@@ -39,7 +39,7 @@
         />
         <img
           v-if="!showRecordingSettings"
-          src="@/assets/icons8-magic-wand-64.png"
+          src="@/assets/icons8-fantasy-64.png"
           @click="showRoomRecordingSettings"
           @contextmenu.prevent
           class="show-magic"
