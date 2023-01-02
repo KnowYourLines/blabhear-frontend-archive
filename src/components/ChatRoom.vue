@@ -269,10 +269,17 @@
         </div>
       </div>
       <div v-else-if="showRecordingSettings">
-        Transcribe voice notes to:
+        Transcribe to:
         <select v-model="chosenLanguage" @change="changeLanguage()">
           <option v-for="language in languages" :key="language">
             {{ language }}
+          </option>
+        </select>
+        <br/><br/>
+        Voice effect:
+        <select v-model="chosenVoiceEffect" @change="changeVoiceEffect()">
+          <option v-for="effect in voiceEffects" :key="effect">
+            {{ effect }}
           </option>
         </select>
       </div>
@@ -357,6 +364,10 @@ export default {
       type: String,
       required: true,
     },
+    selectedVoiceEffect: {
+      type: String,
+      required: true,
+    },
   },
   data() {
     return {
@@ -379,6 +390,8 @@ export default {
       lastApprovedRecordedAudioUrl: "",
       showRecordingSettings: false,
       chosenLanguage: "",
+      chosenVoiceEffect: "",
+      voiceEffects: ["None", "High Pitch", "Low Pitch"],
       languages: [
         "English",
         "English (GB)",
@@ -422,6 +435,14 @@ export default {
         JSON.stringify({
           command: "change_language",
           language: this.chosenLanguage,
+        })
+      );
+    },
+    changeVoiceEffect: function () {
+      this.roomWebSocket.send(
+        JSON.stringify({
+          command: "change_voice_effect",
+          voice_effect: this.chosenVoiceEffect,
         })
       );
     },
@@ -646,6 +667,9 @@ export default {
     selectedLanguage(newLanguage) {
       this.chosenLanguage = newLanguage;
     },
+    selectedVoiceEffect(newEffect) {
+      this.chosenVoiceEffect = newEffect;
+    },
     privacy(newPrivacy) {
       this.privateRoom = newPrivacy;
     },
@@ -707,6 +731,7 @@ export default {
     this.shareable = typeof navigator.share === "function";
     this.privateRoom = this.privacy;
     this.chosenLanguage = this.selectedLanguage;
+    this.chosenVoiceEffect = this.selectedVoiceEffect;
   },
 };
 </script>

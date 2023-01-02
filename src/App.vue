@@ -46,6 +46,7 @@
       :room="room"
       :userId="userId"
       :selectedLanguage="selectedLanguage"
+      :selectedVoiceEffect="selectedVoiceEffect"
       @go-home="goHome"
     />
   </div>
@@ -86,6 +87,7 @@ export default {
       page: 0,
       uploadDestination: {},
       selectedLanguage: "",
+      selectedVoiceEffect: "",
     };
   },
   methods: {
@@ -273,7 +275,12 @@ export default {
             wetFilename: data.wet_filename,
           };
         } else if (data.type == "recording_settings") {
-          this.selectedLanguage = data.language_name;
+          if ("language_name" in data) {
+            this.selectedLanguage = data.language_name;
+          }
+          if ("voice_effect" in data) {
+            this.selectedVoiceEffect = data.voice_effect;
+          }
         }
       };
       this.roomWebSocket.onerror = (e) => {
