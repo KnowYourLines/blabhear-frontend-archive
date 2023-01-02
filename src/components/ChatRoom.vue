@@ -429,7 +429,6 @@ export default {
         "Hindi",
         "Hindi (Roman)",
         "German",
-        "Flemish",
         "Dutch/Flemish",
         "Danish",
         "Chinese",
